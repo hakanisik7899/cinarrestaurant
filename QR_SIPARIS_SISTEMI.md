@@ -25,6 +25,7 @@ Sistem, mevcut statik siteyle aynı yaklaşımı korur: **build adımı yok**, h
 | `supabase/schema.sql` | Veri tabanı şeması, güvenlik kuralları, RPC fonksiyonları, başlangıç verisi | Kurulum (bir kez çalıştırılır) |
 | `supabase/rapor.sql` | Satış raporu RPC'si (`satis_raporu`) | Kurulum (bir kez çalıştırılır) |
 | `js/supabase-client.js` | Ortak Supabase istemcisi (URL + anon key) | Tüm sayfalar |
+| `js/pdf-font.js` | PDF raporu için gömülü Türkçe destekli Noto Sans fontu (base64) | panel.html (Raporlar → PDF İndir) |
 | `css/cinar-theme.css` | Paylaşılan tasarım sistemi (index.html ile aynı renk/tipografi) | masa/panel/mutfak sayfaları |
 
 ### Sipariş durum akışı
@@ -66,6 +67,14 @@ Bu sistemin en kritik tarafı: **anon (müşteri) anahtarı frontend'de herkese 
 
 `masa.html`, kendi sipariş durumunu **5 saniyede bir RPC ile sorgulayarak (polling)** takip eder — Supabase Realtime değil. Sebep: Realtime abonelikleri de RLS'e tabidir; `siparisler` tablosunda anon için SELECT policy'si olmadığından (yukarıdaki güvenlik gerekçesiyle) anon bu tabloyu realtime dinleyemez. Panel ve mutfak ekranları ise personel (authenticated) olduğu için gerçek Supabase Realtime kullanır — sipariş geldiği an, saniyeler içinde ekranda belirir.
 
+### PDF fontu (`js/pdf-font.js`)
+
+PDF motoru (jsPDF) varsayılan olarak yalnızca temel Latin harflerini destekler; Türkçe'ye özgü ğ, ş, ı, İ, ö, ü, ç ve ₺ işareti standart PDF fontlarında **yoktur**. Bunu çözmek için Google'ın açık kaynaklı **Noto Sans** fontu (Apache 2.0) kullanıldı:
+
+1. Değişken (variable) font, `fonttools` ile Regular (400) ve Bold (700) statik örneklerine indirgendi.
+2. Yalnızca gereken karakterlere (Latin + Türkçe + ₺ + tire) `pyftsubset` ile subset edilerek ~2 MB'tan ~49 KB/font'a indirildi.
+3. Base64'e çevrilip `js/pdf-font.js` içine gömüldü — çalışma zamanında harici bir font sunucusuna istek atılmaz (bu projede CDN kaynaklı iki ayrı sorun yaşandığından — bkz. aşağıdaki bölüm — üçüncü bir dış bağımlılık riski alınmadı).
+
 ---
 
 ## 4. Kurulum (bir kereye mahsus, tamamlandı)
@@ -83,7 +92,9 @@ Bu sistemin en kritik tarafı: **anon (müşteri) anahtarı frontend'de herkese 
 - **Siparişler** sekmesi: bekleyen siparişler burada belirir (yeni sipariş geldiğinde sesli uyarı çalar), **Onayla** veya **İptal** ile işlem yapılır.
 - **Menü Yönetimi** sekmesi: kategori/ürün ekle-düzenle-sil, fiyat güncelle, "Stokta" işaretini kaldırarak bir ürünü geçici olarak menüden kaldır.
 - **Masalar & QR** sekmesi: yeni masa ekle, her masanın QR kodunu gör/yazdır, masayı aktif/pasif yap.
-- **Raporlar** sekmesi: hangi üründen kaç adet satıldığını ve cirosunu gösterir. Bugün / Bu Hafta / Bu Ay / Tümü hazır aralıkları veya özel tarih seçimi ile filtrelenir; ürün bazında ve kategori bazında dökümü, toplam ciro/adet/sipariş sayısı özet kartlarını gösterir. **CSV İndir** (Excel'de Türkçe karakter sorunu yaşamadan açılır) ve **Yazdır** düğmeleriyle dışa aktarılabilir. İptal edilen siparişler rapora dahil edilmez; ciro, sipariş anındaki (snapshot) fiyat üzerinden hesaplanır — sonradan menü fiyatı değişse bile geçmiş rapor bozulmaz.
+- **Raporlar** sekmesi: hangi üründen kaç adet satıldığını ve cirosunu gösterir. Bugün / Bu Hafta / Bu Ay / Tümü hazır aralıkları veya özel tarih seçimi ile filtrelenir; ürün bazında ve kategori bazında dökümü, toplam ciro/adet/sipariş sayısı özet kartlarını gösterir. **CSV İndir**, **PDF İndir** (ikisi de Türkçe karakter destekli) ve **Yazdır** düğmeleriyle dışa aktarılabilir. İptal edilen siparişler rapora dahil edilmez; ciro, sipariş anındaki (snapshot) fiyat üzerinden hesaplanır — sonradan menü fiyatı değişse bile geçmiş rapor bozulmaz.
+  - **CSV:** UTF-8 BOM'lu, noktalı virgülle ayrılmış (`;`) — Excel'de Türkçe karakterler ve Türkçe sayı biçimi (virgüllü ondalık) sorunsuz açılır.
+  - **PDF:** jsPDF + jsPDF-AutoTable ile oluşturulur; Türkçe karakterler (ğ, ş, ı, İ, ö, ü, ç) ve ₺ işareti için `js/pdf-font.js` içine **gömülü** bir Noto Sans font kullanılır (bkz. aşağıdaki "PDF fontu" notu) — harici bir font CDN'ine bağımlı değildir.
 
 ### Personel — Mutfak (`mutfak.html`)
 - Onaylanan siparişler otomatik belirir. **Hazırlanıyor → Hazır → Teslim** butonlarıyla ilerletilir.

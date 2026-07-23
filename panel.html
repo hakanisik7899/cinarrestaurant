@@ -203,6 +203,7 @@
         <h2>Satış Raporu</h2>
         <div style="display:flex; gap:10px;" class="no-print">
           <button class="btn btn-outline btn-sm" id="raporCsvBtn">CSV İndir</button>
+          <button class="btn btn-outline btn-sm" id="raporPdfBtn">PDF İndir</button>
           <button class="btn btn-outline btn-sm" id="raporYazdirBtn">Yazdır</button>
         </div>
       </div>
@@ -363,6 +364,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="js/pdf-font.js"></script>
 <script src="js/supabase-client.js"></script>
 <script>
 
@@ -799,6 +803,7 @@ document.getElementById('masaForm').addEventListener('submit', async (e) => {
 let raporYuklendiMi = false;
 let raporUrunSatirlariCache = [];
 let raporAraligiMetniCache = '';
+let raporSiparisSayisiCache = 0;
 
 function gunBaslangici(tarih) {
   const d = new Date(tarih);
@@ -885,7 +890,31 @@ async function loadRapor(baslangic, bitis) {
   }
 
   raporUrunSatirlariCache = satirlar || [];
-  renderRapor(raporUrunSatirlariCache, siparisSayisi || 0);
+  raporSiparisSayisiCache = siparisSayisi || 0;
+  renderRapor(raporUrunSatirlariCache, raporSiparisSayisiCache);
+}
+
+// Ürün satırlarından toplamları ve kategori bazında özeti çıkarır.
+// hem ekrandaki tabloyu (renderRapor) hem PDF/CSV dışa aktarımını besler.
+function raporOzetHesapla(satirlar) {
+  let toplamCiro = 0;
+  let toplamAdet = 0;
+  const kategoriMap = new Map(); // ad -> { adet, tutar }
+
+  satirlar.forEach((s) => {
+    toplamCiro += Number(s.toplam_tutar);
+    toplamAdet += Number(s.toplam_adet);
+    const kat = kategoriMap.get(s.kategori_ad) || { adet: 0, tutar: 0 };
+    kat.adet += Number(s.toplam_adet);
+    kat.tutar += Number(s.toplam_tutar);
+    kategoriMap.set(s.kategori_ad, kat);
+  });
+
+  const kategoriler = Array.from(kategoriMap.entries())
+    .map(([ad, veri]) => ({ ad, adet: veri.adet, tutar: veri.tutar }))
+    .sort((a, b) => b.tutar - a.tutar);
+
+  return { toplamCiro, toplamAdet, kategoriler };
 }
 
 function renderRapor(satirlar, siparisSayisi) {
@@ -895,26 +924,11 @@ function renderRapor(satirlar, siparisSayisi) {
 
   urunTablosu.innerHTML = '';
   kategoriTablosu.innerHTML = '';
+  emptyEl.style.display = satirlar.length === 0 ? 'block' : 'none';
 
-  if (satirlar.length === 0) {
-    emptyEl.style.display = 'block';
-  } else {
-    emptyEl.style.display = 'none';
-  }
-
-  let toplamCiro = 0;
-  let toplamAdet = 0;
-  const kategoriOzet = new Map(); // ad -> { adet, tutar }
+  const { toplamCiro, toplamAdet, kategoriler } = raporOzetHesapla(satirlar);
 
   satirlar.forEach((s) => {
-    toplamCiro += Number(s.toplam_tutar);
-    toplamAdet += Number(s.toplam_adet);
-
-    const kat = kategoriOzet.get(s.kategori_ad) || { adet: 0, tutar: 0 };
-    kat.adet += Number(s.toplam_adet);
-    kat.tutar += Number(s.toplam_tutar);
-    kategoriOzet.set(s.kategori_ad, kat);
-
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${s.urun_ad}</td>
@@ -925,13 +939,11 @@ function renderRapor(satirlar, siparisSayisi) {
     urunTablosu.appendChild(row);
   });
 
-  Array.from(kategoriOzet.entries())
-    .sort((a, b) => b[1].tutar - a[1].tutar)
-    .forEach(([ad, veri]) => {
-      const row = document.createElement('tr');
-      row.innerHTML = `<td>${ad}</td><td>${veri.adet}</td><td>${money(veri.tutar)}</td>`;
-      kategoriTablosu.appendChild(row);
-    });
+  kategoriler.forEach((k) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${k.ad}</td><td>${k.adet}</td><td>${money(k.tutar)}</td>`;
+    kategoriTablosu.appendChild(row);
+  });
 
   document.getElementById('raporToplamCiro').textContent = money(toplamCiro);
   document.getElementById('raporToplamAdet').textContent = toplamAdet.toLocaleString('tr-TR');
@@ -962,6 +974,93 @@ document.getElementById('raporCsvBtn').addEventListener('click', () => {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+});
+
+// PDF motoruna (jsPDF) gömülü Noto Sans fontunu bir kez kaydeder; sonraki
+// çağrılarda tekrar addFont yapmaz (registeredFontAdi kontrolü).
+let raporPdfFontHazirMi = false;
+function raporPdfFontKaydet(doc) {
+  if (raporPdfFontHazirMi) return true;
+  if (!window.CINAR_PDF_FONT_REGULAR || !window.CINAR_PDF_FONT_BOLD) return false;
+  doc.addFileToVFS('NotoSans-Regular.ttf', window.CINAR_PDF_FONT_REGULAR);
+  doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
+  doc.addFileToVFS('NotoSans-Bold.ttf', window.CINAR_PDF_FONT_BOLD);
+  doc.addFont('NotoSans-Bold.ttf', 'NotoSans', 'bold');
+  raporPdfFontHazirMi = true;
+  return true;
+}
+
+document.getElementById('raporPdfBtn').addEventListener('click', () => {
+  if (raporUrunSatirlariCache.length === 0) {
+    showToast('İndirilecek veri yok.', true);
+    return;
+  }
+  if (typeof window.jspdf === 'undefined') {
+    showToast('PDF oluşturulamadı: kütüphane yüklenemedi. İnternet bağlantınızı kontrol edin.', true);
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+  if (!raporPdfFontKaydet(doc)) {
+    showToast('PDF oluşturulamadı: font yüklenemedi.', true);
+    return;
+  }
+  doc.setFont('NotoSans', 'normal');
+
+  const { toplamCiro, toplamAdet, kategoriler } = raporOzetHesapla(raporUrunSatirlariCache);
+  const yesilRgb = [47, 74, 60];   // --cinar-green
+  const kremRgb = [245, 239, 228]; // --cream
+
+  // Başlık
+  doc.setFont('NotoSans', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...yesilRgb);
+  doc.text('Çınar Restaurant — Satış Raporu', 40, 45);
+
+  doc.setFont('NotoSans', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(90, 84, 74);
+  doc.text(raporAraligiMetniCache, 40, 62);
+
+  // Özet satırı
+  doc.setFontSize(11);
+  doc.setTextColor(35, 32, 28);
+  doc.text(
+    `Toplam Ciro: ${money(toplamCiro)}    Satılan Adet: ${toplamAdet}    Sipariş Sayısı: ${raporSiparisSayisiCache}`,
+    40, 82
+  );
+
+  // Ürün tablosu
+  doc.autoTable({
+    startY: 100,
+    head: [['Ürün', 'Kategori', 'Adet', 'Tutar']],
+    body: raporUrunSatirlariCache.map((s) => [s.urun_ad, s.kategori_ad, String(s.toplam_adet), money(s.toplam_tutar)]),
+    styles: { font: 'NotoSans', fontStyle: 'normal', fontSize: 9, textColor: [35, 32, 28] },
+    headStyles: { font: 'NotoSans', fontStyle: 'bold', fillColor: yesilRgb, textColor: kremRgb },
+    columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } },
+    margin: { left: 40, right: 40 },
+  });
+
+  // Kategori özeti (ürün tablosunun bittiği yerden devam)
+  const kategoriBaslangicY = doc.lastAutoTable.finalY + 26;
+  doc.setFont('NotoSans', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...yesilRgb);
+  doc.text('Kategori Bazında Özet', 40, kategoriBaslangicY);
+
+  doc.autoTable({
+    startY: kategoriBaslangicY + 10,
+    head: [['Kategori', 'Adet', 'Tutar']],
+    body: kategoriler.map((k) => [k.ad, String(k.adet), money(k.tutar)]),
+    styles: { font: 'NotoSans', fontStyle: 'normal', fontSize: 9, textColor: [35, 32, 28] },
+    headStyles: { font: 'NotoSans', fontStyle: 'bold', fillColor: yesilRgb, textColor: kremRgb },
+    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+    margin: { left: 40, right: 40 },
+  });
+
+  doc.save(`cinar-satis-raporu-${new Date().toISOString().slice(0, 10)}.pdf`);
 });
 
 checkSession();
