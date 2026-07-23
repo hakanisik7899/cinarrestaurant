@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/cinar-theme.css">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
   body { background: var(--sand); }
 
@@ -261,7 +261,7 @@
 <div id="printArea" style="display:none;">
   <img src="logo.png" style="height:50px; margin-bottom:10px;">
   <h2 id="printMasaAdi" style="font-family:'Fraunces',serif; margin-bottom:14px;"></h2>
-  <canvas id="printCanvas"></canvas>
+  <div id="printQrHolder"></div>
   <p style="margin-top:14px;">Menü & Sipariş için QR kodu okutun</p>
 </div>
 
@@ -641,23 +641,31 @@ function renderMasalar(masalar) {
     card.innerHTML = `
       <h3>Masa ${masa.masa_no}</h3>
       <div class="durum-etiket">${masa.aktif ? 'Aktif' : 'Pasif'}</div>
-      <canvas></canvas>
+      <div class="qr-holder" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
       <div class="btn-row">
         <button class="btn btn-outline btn-sm" data-print>Yazdır</button>
         <button class="btn ${masa.aktif ? 'btn-danger' : 'btn-primary'} btn-sm" data-toggle>${masa.aktif ? 'Pasifleştir' : 'Aktifleştir'}</button>
       </div>
     `;
-    const canvas = card.querySelector('canvas');
-    QRCode.toCanvas(canvas, url, { width: 160, margin: 1, color: { dark: '#23201C', light: '#F5EFE4' } });
+    const qrHolder = card.querySelector('.qr-holder');
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(qrHolder, { text: url, width: 160, height: 160, colorDark: '#23201C', colorLight: '#F5EFE4' });
+    } else {
+      qrHolder.innerHTML = `<a href="${url}" target="_blank" style="font-size:0.78rem; word-break:break-all;">${url}</a>`;
+    }
 
     card.querySelector('[data-print]').addEventListener('click', () => {
       document.getElementById('printMasaAdi').textContent = `Masa ${masa.masa_no}`;
-      const printCanvas = document.getElementById('printCanvas');
-      QRCode.toCanvas(printCanvas, url, { width: 260, margin: 1 }, () => {
-        document.getElementById('printArea').style.display = 'flex';
-        window.print();
-        document.getElementById('printArea').style.display = 'none';
-      });
+      const printHolder = document.getElementById('printQrHolder');
+      printHolder.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(printHolder, { text: url, width: 260, height: 260 });
+      } else {
+        printHolder.textContent = url;
+      }
+      document.getElementById('printArea').style.display = 'flex';
+      window.print();
+      document.getElementById('printArea').style.display = 'none';
     });
 
     card.querySelector('[data-toggle]').addEventListener('click', async () => {
