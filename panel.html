@@ -964,8 +964,13 @@ document.getElementById('raporCsvBtn').addEventListener('click', () => {
   const csvIcerik = [basliklar, ...satirlarCsv]
     .map((satir) => satir.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(';'))
     .join('\r\n');
-  // UTF-8 BOM: Excel'de Türkçe karakterlerin doğru görünmesi için
-  const blob = new Blob(['﻿' + csvIcerik], { type: 'text/csv;charset=utf-8;' });
+  // UTF-8 BOM'u byte düzeyinde (0xEF,0xBB,0xBF) ekliyoruz — bir JS string
+  // literaline gömülü görünmez BOM karakterine güvenmek, dosya farklı bir
+  // araçla kaydedilip yeniden yazıldığında bozulmaya açık; TextEncoder ile
+  // üretilen bytes bu riski tamamen ortadan kaldırır.
+  const bomBytes = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const csvBytes = new TextEncoder().encode(csvIcerik);
+  const blob = new Blob([bomBytes, csvBytes], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
