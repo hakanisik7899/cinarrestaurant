@@ -23,6 +23,7 @@ Sistem, mevcut statik siteyle aynı yaklaşımı korur: **build adımı yok**, h
 | `panel.html` | Kontrol birimi — sipariş onay/red, menü yönetimi, masa & QR üretimi | Personel (giriş gerekli) |
 | `mutfak.html` | Mutfak ekranı — onaylı siparişlerin hazırlanma takibi | Personel (giriş gerekli) |
 | `supabase/schema.sql` | Veri tabanı şeması, güvenlik kuralları, RPC fonksiyonları, başlangıç verisi | Kurulum (bir kez çalıştırılır) |
+| `supabase/rapor.sql` | Satış raporu RPC'si (`satis_raporu`) | Kurulum (bir kez çalıştırılır) |
 | `js/supabase-client.js` | Ortak Supabase istemcisi (URL + anon key) | Tüm sayfalar |
 | `css/cinar-theme.css` | Paylaşılan tasarım sistemi (index.html ile aynı renk/tipografi) | masa/panel/mutfak sayfaları |
 
@@ -59,6 +60,7 @@ Bu sistemin en kritik tarafı: **anon (müşteri) anahtarı frontend'de herkese 
   - `siparis_durumu_getir(siparis_id)` — sadece elindeki sipariş uuid'sinin durumunu döner.
 - **Fiyat bütünlüğü:** `siparis_olustur` fiyatları client'tan almaz, `menu_urunler` tablosundan sunucu tarafında okur ve toplamı kendisi hesaplar. Client'tan sahte bir fiyat gönderilse bile hiçbir etkisi olmaz.
 - Personel (authenticated) rolü tüm tablolarda tam yetkiye sahiptir (RLS policy'leriyle).
+- `satis_raporu(baslangic, bitis)` — satış raporu RPC'si. Yalnızca `authenticated` role'e `execute` yetkisi verilmiştir; anon bu fonksiyonu çağıramaz (ciro bilgisi gizlidir).
 
 ### Neden polling, neden realtime değil (müşteri tarafı)
 
@@ -71,6 +73,7 @@ Bu sistemin en kritik tarafı: **anon (müşteri) anahtarı frontend'de herkese 
 1. Supabase projesi oluşturuldu, Project URL + anon key `js/supabase-client.js` içine eklendi.
 2. `supabase/schema.sql`, Supabase SQL Editor'de çalıştırıldı → tablolar, RLS, RPC'ler ve başlangıç menüsü (mevcut `index.html` menüsünden aktarıldı, fiyatlar 0 olarak) + 5 örnek masa oluşturuldu.
 3. Supabase Authentication'da personel girişi için en az bir e-posta/şifre hesabı açıldı (panel.html ve mutfak.html bu hesapla açılır).
+4. `supabase/rapor.sql`, Supabase SQL Editor'de çalıştırıldı → `satis_raporu` RPC'si oluşturuldu (panel.html'deki Raporlar sekmesi için).
 
 ---
 
@@ -80,6 +83,7 @@ Bu sistemin en kritik tarafı: **anon (müşteri) anahtarı frontend'de herkese 
 - **Siparişler** sekmesi: bekleyen siparişler burada belirir (yeni sipariş geldiğinde sesli uyarı çalar), **Onayla** veya **İptal** ile işlem yapılır.
 - **Menü Yönetimi** sekmesi: kategori/ürün ekle-düzenle-sil, fiyat güncelle, "Stokta" işaretini kaldırarak bir ürünü geçici olarak menüden kaldır.
 - **Masalar & QR** sekmesi: yeni masa ekle, her masanın QR kodunu gör/yazdır, masayı aktif/pasif yap.
+- **Raporlar** sekmesi: hangi üründen kaç adet satıldığını ve cirosunu gösterir. Bugün / Bu Hafta / Bu Ay / Tümü hazır aralıkları veya özel tarih seçimi ile filtrelenir; ürün bazında ve kategori bazında dökümü, toplam ciro/adet/sipariş sayısı özet kartlarını gösterir. **CSV İndir** (Excel'de Türkçe karakter sorunu yaşamadan açılır) ve **Yazdır** düğmeleriyle dışa aktarılabilir. İptal edilen siparişler rapora dahil edilmez; ciro, sipariş anındaki (snapshot) fiyat üzerinden hesaplanır — sonradan menü fiyatı değişse bile geçmiş rapor bozulmaz.
 
 ### Personel — Mutfak (`mutfak.html`)
 - Onaylanan siparişler otomatik belirir. **Hazırlanıyor → Hazır → Teslim** butonlarıyla ilerletilir.

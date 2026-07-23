@@ -92,10 +92,43 @@
   .masa-card .btn-row { display: flex; gap: 8px; }
   .masa-card .btn-row .btn { flex: 1; }
 
+  /* ---------------- Raporlar ---------------- */
+  .rapor-filtre { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .rapor-hazir-btn {
+    padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(107,100,89,0.25);
+    background: var(--cream); color: var(--charcoal); font-weight: 600; font-size: 0.82rem;
+    cursor: pointer; font-family: inherit;
+  }
+  .rapor-hazir-btn.active { background: var(--cinar-green); color: var(--cream); border-color: var(--cinar-green); }
+  .rapor-ozel-tarih { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; margin-left: 8px; }
+  .rapor-ozel-tarih input { width: auto; padding: 8px 10px; }
+  .rapor-baslik-yazdir { text-align: center; margin-bottom: 20px; }
+  .rapor-baslik-yazdir h2 { font-size: 1.2rem; margin: 8px 0 4px; }
+  .rapor-baslik-yazdir p { color: var(--muted); font-size: 0.85rem; }
+
+  .rapor-ozet-kartlar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 26px; }
+  .rapor-ozet-kart { padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+  .rapor-ozet-etiket { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+  .rapor-ozet-deger { font-family: 'Fraunces', serif; font-size: 1.5rem; color: var(--cinar-green); }
+
+  .rapor-alt-baslik { font-size: 1rem; color: var(--cinar-green); margin: 22px 0 10px; }
+  .rapor-tablo-wrap { overflow-x: auto; background: var(--cream); border-radius: var(--radius); box-shadow: 0 14px 34px -18px rgba(35,32,28,0.25); }
+  .rapor-tablo { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .rapor-tablo th, .rapor-tablo td { text-align: left; padding: 12px 16px; border-bottom: 1px solid rgba(107,100,89,0.14); }
+  .rapor-tablo th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .rapor-tablo td:nth-child(3), .rapor-tablo th:nth-child(3),
+  .rapor-tablo td:last-child, .rapor-tablo th:last-child { text-align: right; }
+  .rapor-tablo tbody tr:last-child td { border-bottom: none; }
+
   @media print {
     body * { visibility: hidden; }
     #printArea, #printArea * { visibility: visible; }
     #printArea { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+
+    #view-rapor.active, #view-rapor.active * { visibility: visible; }
+    #view-rapor.active { position: fixed; inset: 0; padding: 30px; }
+    #view-rapor.active .no-print, #view-rapor.active .no-print * { display: none !important; }
+    #view-rapor.active .rapor-baslik-yazdir { display: block !important; }
   }
 </style>
 </head>
@@ -134,6 +167,7 @@
     <button class="tab-btn active" data-view="siparisler">Siparişler</button>
     <button class="tab-btn" data-view="menu">Menü Yönetimi</button>
     <button class="tab-btn" data-view="masalar">Masalar & QR</button>
+    <button class="tab-btn" data-view="rapor">Raporlar</button>
   </nav>
 
   <main class="panel-main">
@@ -162,6 +196,69 @@
         <button class="btn btn-primary btn-sm" id="yeniMasaBtn">+ Masa Ekle</button>
       </div>
       <div class="masa-grid" id="masaGrid"></div>
+    </section>
+
+    <section class="panel-view" id="view-rapor">
+      <div class="section-toolbar">
+        <h2>Satış Raporu</h2>
+        <div style="display:flex; gap:10px;" class="no-print">
+          <button class="btn btn-outline btn-sm" id="raporCsvBtn">CSV İndir</button>
+          <button class="btn btn-outline btn-sm" id="raporYazdirBtn">Yazdır</button>
+        </div>
+      </div>
+
+      <div class="rapor-filtre no-print">
+        <button class="rapor-hazir-btn active" data-aralik="bugun">Bugün</button>
+        <button class="rapor-hazir-btn" data-aralik="hafta">Bu Hafta</button>
+        <button class="rapor-hazir-btn" data-aralik="ay">Bu Ay</button>
+        <button class="rapor-hazir-btn" data-aralik="tumu">Tümü</button>
+        <span class="rapor-ozel-tarih">
+          <input type="date" id="raporBaslangic"> – <input type="date" id="raporBitis">
+          <button class="btn btn-outline btn-sm" id="raporOzelUygulaBtn">Uygula</button>
+        </span>
+      </div>
+
+      <div class="rapor-baslik-yazdir" id="raporBaslikYazdir" style="display:none;">
+        <img src="logo.png" style="height:40px;">
+        <h2>Çınar Restaurant — Satış Raporu</h2>
+        <p id="raporTarihAraligiMetni"></p>
+      </div>
+
+      <div class="rapor-ozet-kartlar">
+        <div class="card rapor-ozet-kart">
+          <span class="rapor-ozet-etiket">Toplam Ciro</span>
+          <span class="rapor-ozet-deger" id="raporToplamCiro">₺0</span>
+        </div>
+        <div class="card rapor-ozet-kart">
+          <span class="rapor-ozet-etiket">Satılan Adet</span>
+          <span class="rapor-ozet-deger" id="raporToplamAdet">0</span>
+        </div>
+        <div class="card rapor-ozet-kart">
+          <span class="rapor-ozet-etiket">Sipariş Sayısı</span>
+          <span class="rapor-ozet-deger" id="raporSiparisSayisi">0</span>
+        </div>
+      </div>
+
+      <h3 class="rapor-alt-baslik">Ürün Bazında</h3>
+      <div class="rapor-tablo-wrap">
+        <table class="rapor-tablo">
+          <thead>
+            <tr><th>Ürün</th><th>Kategori</th><th>Adet</th><th>Tutar</th></tr>
+          </thead>
+          <tbody id="raporUrunTablosu"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="raporEmpty" style="display:none;">Bu tarih aralığında satış bulunmuyor.</div>
+
+      <h3 class="rapor-alt-baslik">Kategori Bazında</h3>
+      <div class="rapor-tablo-wrap">
+        <table class="rapor-tablo">
+          <thead>
+            <tr><th>Kategori</th><th>Adet</th><th>Tutar</th></tr>
+          </thead>
+          <tbody id="raporKategoriTablosu"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 </div>
@@ -330,6 +427,10 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     document.querySelectorAll('.panel-view').forEach((v) => v.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    if (btn.dataset.view === 'rapor' && !raporYuklendiMi) {
+      raporYuklendiMi = true;
+      raporAralikSec('bugun');
+    }
   });
 });
 
@@ -692,6 +793,175 @@ document.getElementById('masaForm').addEventListener('submit', async (e) => {
   document.getElementById('masaForm').reset();
   masaModalOverlay.classList.remove('open');
   loadMasalar();
+});
+
+/* ---------------- Raporlar ---------------- */
+let raporYuklendiMi = false;
+let raporUrunSatirlariCache = [];
+let raporAraligiMetniCache = '';
+
+function gunBaslangici(tarih) {
+  const d = new Date(tarih);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function raporAraligiHesapla(tur) {
+  const bugun = gunBaslangici(new Date());
+  const yarin = new Date(bugun);
+  yarin.setDate(yarin.getDate() + 1);
+
+  if (tur === 'bugun') return { baslangic: bugun, bitis: yarin };
+
+  if (tur === 'hafta') {
+    // Pazartesi başlangıçlı hafta
+    const gunIndex = (bugun.getDay() + 6) % 7; // Pzt=0 ... Paz=6
+    const haftaBasi = new Date(bugun);
+    haftaBasi.setDate(haftaBasi.getDate() - gunIndex);
+    return { baslangic: haftaBasi, bitis: yarin };
+  }
+
+  if (tur === 'ay') {
+    const ayBasi = new Date(bugun.getFullYear(), bugun.getMonth(), 1);
+    return { baslangic: ayBasi, bitis: yarin };
+  }
+
+  // tumu
+  return { baslangic: new Date('2020-01-01T00:00:00'), bitis: yarin };
+}
+
+function raporTarihEtiketi(tur, baslangic, bitis) {
+  const fmt = (d) => d.toLocaleDateString('tr-TR');
+  if (tur === 'bugun') return `Bugün (${fmt(baslangic)})`;
+  if (tur === 'hafta') return `Bu Hafta (${fmt(baslangic)} – ${fmt(new Date(bitis.getTime() - 86400000))})`;
+  if (tur === 'ay') return `Bu Ay (${fmt(baslangic)} – ${fmt(new Date(bitis.getTime() - 86400000))})`;
+  if (tur === 'tumu') return 'Tüm Zamanlar';
+  return `${fmt(baslangic)} – ${fmt(new Date(bitis.getTime() - 86400000))}`;
+}
+
+function raporAralikSec(tur) {
+  document.querySelectorAll('.rapor-hazir-btn').forEach((b) => b.classList.toggle('active', b.dataset.aralik === tur));
+  const { baslangic, bitis } = raporAraligiHesapla(tur);
+  document.getElementById('raporBaslangic').value = baslangic.toISOString().slice(0, 10);
+  document.getElementById('raporBitis').value = new Date(bitis.getTime() - 86400000).toISOString().slice(0, 10);
+  raporAraligiMetniCache = raporTarihEtiketi(tur, baslangic, bitis);
+  loadRapor(baslangic, bitis);
+}
+
+document.querySelectorAll('.rapor-hazir-btn').forEach((btn) => {
+  btn.addEventListener('click', () => raporAralikSec(btn.dataset.aralik));
+});
+
+document.getElementById('raporOzelUygulaBtn').addEventListener('click', () => {
+  const basVal = document.getElementById('raporBaslangic').value;
+  const bitVal = document.getElementById('raporBitis').value;
+  if (!basVal || !bitVal) {
+    showToast('Lütfen başlangıç ve bitiş tarihi seçin.', true);
+    return;
+  }
+  document.querySelectorAll('.rapor-hazir-btn').forEach((b) => b.classList.remove('active'));
+  const baslangic = new Date(basVal + 'T00:00:00');
+  const bitisSeciliGun = new Date(bitVal + 'T00:00:00');
+  const bitis = new Date(bitisSeciliGun.getTime() + 86400000); // seçilen bitiş günü dahil olsun
+  raporAraligiMetniCache = raporTarihEtiketi('ozel', baslangic, bitis);
+  loadRapor(baslangic, bitis);
+});
+
+async function loadRapor(baslangic, bitis) {
+  document.getElementById('raporTarihAraligiMetni').textContent = raporAraligiMetniCache;
+
+  const [{ data: satirlar, error: raporErr }, { count: siparisSayisi }] = await Promise.all([
+    supabase.rpc('satis_raporu', { p_baslangic: baslangic.toISOString(), p_bitis: bitis.toISOString() }),
+    supabase.from('siparisler')
+      .select('id', { count: 'exact', head: true })
+      .neq('durum', 'iptal')
+      .gte('created_at', baslangic.toISOString())
+      .lt('created_at', bitis.toISOString()),
+  ]);
+
+  if (raporErr) {
+    showToast('Rapor yüklenemedi: ' + raporErr.message, true);
+    return;
+  }
+
+  raporUrunSatirlariCache = satirlar || [];
+  renderRapor(raporUrunSatirlariCache, siparisSayisi || 0);
+}
+
+function renderRapor(satirlar, siparisSayisi) {
+  const urunTablosu = document.getElementById('raporUrunTablosu');
+  const kategoriTablosu = document.getElementById('raporKategoriTablosu');
+  const emptyEl = document.getElementById('raporEmpty');
+
+  urunTablosu.innerHTML = '';
+  kategoriTablosu.innerHTML = '';
+
+  if (satirlar.length === 0) {
+    emptyEl.style.display = 'block';
+  } else {
+    emptyEl.style.display = 'none';
+  }
+
+  let toplamCiro = 0;
+  let toplamAdet = 0;
+  const kategoriOzet = new Map(); // ad -> { adet, tutar }
+
+  satirlar.forEach((s) => {
+    toplamCiro += Number(s.toplam_tutar);
+    toplamAdet += Number(s.toplam_adet);
+
+    const kat = kategoriOzet.get(s.kategori_ad) || { adet: 0, tutar: 0 };
+    kat.adet += Number(s.toplam_adet);
+    kat.tutar += Number(s.toplam_tutar);
+    kategoriOzet.set(s.kategori_ad, kat);
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${s.urun_ad}</td>
+      <td>${s.kategori_ad}</td>
+      <td>${s.toplam_adet}</td>
+      <td>${money(s.toplam_tutar)}</td>
+    `;
+    urunTablosu.appendChild(row);
+  });
+
+  Array.from(kategoriOzet.entries())
+    .sort((a, b) => b[1].tutar - a[1].tutar)
+    .forEach(([ad, veri]) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${ad}</td><td>${veri.adet}</td><td>${money(veri.tutar)}</td>`;
+      kategoriTablosu.appendChild(row);
+    });
+
+  document.getElementById('raporToplamCiro').textContent = money(toplamCiro);
+  document.getElementById('raporToplamAdet').textContent = toplamAdet.toLocaleString('tr-TR');
+  document.getElementById('raporSiparisSayisi').textContent = siparisSayisi.toLocaleString('tr-TR');
+}
+
+document.getElementById('raporYazdirBtn').addEventListener('click', () => window.print());
+
+document.getElementById('raporCsvBtn').addEventListener('click', () => {
+  if (raporUrunSatirlariCache.length === 0) {
+    showToast('İndirilecek veri yok.', true);
+    return;
+  }
+  const basliklar = ['Ürün', 'Kategori', 'Adet', 'Tutar (TL)'];
+  const satirlarCsv = raporUrunSatirlariCache.map((s) => [
+    s.urun_ad, s.kategori_ad, s.toplam_adet, Number(s.toplam_tutar).toFixed(2).replace('.', ','),
+  ]);
+  const csvIcerik = [basliklar, ...satirlarCsv]
+    .map((satir) => satir.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(';'))
+    .join('\r\n');
+  // UTF-8 BOM: Excel'de Türkçe karakterlerin doğru görünmesi için
+  const blob = new Blob(['﻿' + csvIcerik], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cinar-satis-raporu-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 });
 
 checkSession();
