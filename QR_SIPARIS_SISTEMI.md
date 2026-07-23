@@ -92,8 +92,7 @@ PDF motoru (jsPDF) varsayılan olarak yalnızca temel Latin harflerini destekler
 - **Siparişler** sekmesi: bekleyen siparişler burada belirir (yeni sipariş geldiğinde sesli uyarı çalar), **Onayla** veya **İptal** ile işlem yapılır.
 - **Menü Yönetimi** sekmesi: kategori/ürün ekle-düzenle-sil, fiyat güncelle, "Stokta" işaretini kaldırarak bir ürünü geçici olarak menüden kaldır.
 - **Masalar & QR** sekmesi: yeni masa ekle, her masanın QR kodunu gör/yazdır, masayı aktif/pasif yap.
-- **Raporlar** sekmesi: hangi üründen kaç adet satıldığını ve cirosunu gösterir. Bugün / Bu Hafta / Bu Ay / Tümü hazır aralıkları veya özel tarih seçimi ile filtrelenir; ürün bazında ve kategori bazında dökümü, toplam ciro/adet/sipariş sayısı özet kartlarını gösterir. **CSV İndir**, **PDF İndir** (ikisi de Türkçe karakter destekli) ve **Yazdır** düğmeleriyle dışa aktarılabilir. İptal edilen siparişler rapora dahil edilmez; ciro, sipariş anındaki (snapshot) fiyat üzerinden hesaplanır — sonradan menü fiyatı değişse bile geçmiş rapor bozulmaz.
-  - **CSV:** UTF-8 BOM'lu, noktalı virgülle ayrılmış (`;`) — Excel'de Türkçe karakterler ve Türkçe sayı biçimi (virgüllü ondalık) sorunsuz açılır.
+- **Raporlar** sekmesi: hangi üründen kaç adet satıldığını ve cirosunu gösterir. Bugün / Bu Hafta / Bu Ay / Tümü hazır aralıkları veya özel tarih seçimi ile filtrelenir; ürün bazında ve kategori bazında dökümü, toplam ciro/adet/sipariş sayısı özet kartlarını gösterir. **PDF İndir** ve **Yazdır** düğmeleriyle dışa aktarılabilir. İptal edilen siparişler rapora dahil edilmez; ciro, sipariş anındaki (snapshot) fiyat üzerinden hesaplanır — sonradan menü fiyatı değişse bile geçmiş rapor bozulmaz.
   - **PDF:** jsPDF + jsPDF-AutoTable ile oluşturulur; Türkçe karakterler (ğ, ş, ı, İ, ö, ü, ç) ve ₺ işareti için `js/pdf-font.js` içine **gömülü** bir Noto Sans font kullanılır (bkz. aşağıdaki "PDF fontu" notu) — harici bir font CDN'ine bağımlı değildir.
 
 ### Personel — Mutfak (`mutfak.html`)

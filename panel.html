@@ -202,7 +202,6 @@
       <div class="section-toolbar">
         <h2>Satış Raporu</h2>
         <div style="display:flex; gap:10px;" class="no-print">
-          <button class="btn btn-outline btn-sm" id="raporCsvBtn">CSV İndir</button>
           <button class="btn btn-outline btn-sm" id="raporPdfBtn">PDF İndir</button>
           <button class="btn btn-outline btn-sm" id="raporYazdirBtn">Yazdır</button>
         </div>
@@ -895,7 +894,7 @@ async function loadRapor(baslangic, bitis) {
 }
 
 // Ürün satırlarından toplamları ve kategori bazında özeti çıkarır.
-// hem ekrandaki tabloyu (renderRapor) hem PDF/CSV dışa aktarımını besler.
+// hem ekrandaki tabloyu (renderRapor) hem PDF dışa aktarımını besler.
 function raporOzetHesapla(satirlar) {
   let toplamCiro = 0;
   let toplamAdet = 0;
@@ -951,35 +950,6 @@ function renderRapor(satirlar, siparisSayisi) {
 }
 
 document.getElementById('raporYazdirBtn').addEventListener('click', () => window.print());
-
-document.getElementById('raporCsvBtn').addEventListener('click', () => {
-  if (raporUrunSatirlariCache.length === 0) {
-    showToast('İndirilecek veri yok.', true);
-    return;
-  }
-  const basliklar = ['Ürün', 'Kategori', 'Adet', 'Tutar (TL)'];
-  const satirlarCsv = raporUrunSatirlariCache.map((s) => [
-    s.urun_ad, s.kategori_ad, s.toplam_adet, Number(s.toplam_tutar).toFixed(2).replace('.', ','),
-  ]);
-  const csvIcerik = [basliklar, ...satirlarCsv]
-    .map((satir) => satir.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(';'))
-    .join('\r\n');
-  // UTF-8 BOM'u byte düzeyinde (0xEF,0xBB,0xBF) ekliyoruz — bir JS string
-  // literaline gömülü görünmez BOM karakterine güvenmek, dosya farklı bir
-  // araçla kaydedilip yeniden yazıldığında bozulmaya açık; TextEncoder ile
-  // üretilen bytes bu riski tamamen ortadan kaldırır.
-  const bomBytes = new Uint8Array([0xEF, 0xBB, 0xBF]);
-  const csvBytes = new TextEncoder().encode(csvIcerik);
-  const blob = new Blob([bomBytes, csvBytes], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `cinar-satis-raporu-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-});
 
 // PDF motoruna (jsPDF) gömülü Noto Sans fontunu bir kez kaydeder; sonraki
 // çağrılarda tekrar addFont yapmaz (registeredFontAdi kontrolü).
