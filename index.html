@@ -1041,9 +1041,9 @@
 
 <a class="whatsapp-float" href="https://wa.me/904462140777" target="_blank" rel="noopener" aria-label="WhatsApp">💬</a>
 
-<script type="module">
-  import { supabase } from './js/supabase-client.js';
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
   document.getElementById('year').textContent = new Date().getFullYear();
 
   /* ---------- Header scroll state ---------- */
@@ -1156,6 +1156,7 @@
   // bir sebeple veri gelmezse (ağ hatası, boş tablo) FALLBACK_MENU ile
   // sayfa yine de çalışır durumda kalır.
   async function loadMenuFromSupabase() {
+    if (window.cinarSupabaseYuklenemedi) return; // FALLBACK_MENU zaten gösteriliyor
     const [{ data: katData, error: katErr }, { data: urunData, error: urunErr }] = await Promise.all([
       supabase.from('menu_kategoriler').select('*').eq('aktif', true).order('sira'),
       supabase.from('menu_urunler').select('*').eq('stokta', true).order('sira'),

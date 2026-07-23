@@ -215,8 +215,9 @@
   </div>
 </div>
 
-<script type="module">
-import { supabase } from './js/supabase-client.js';
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
 
 const app = document.getElementById('app');
 const masaEtiket = document.getElementById('masaEtiket');
@@ -248,6 +249,15 @@ function storageKey(masaId) { return `cinar_siparis_${masaId}`; }
 function renderState(html) { app.innerHTML = html; }
 
 async function init() {
+  if (window.cinarSupabaseYuklenemedi) {
+    renderState(`
+      <div class="state-screen">
+        <h2>Bağlantı Kurulamadı</h2>
+        <p>Sistem şu anda yüklenemedi. Lütfen internet bağlantınızı kontrol edip sayfayı yenileyin.</p>
+      </div>
+    `);
+    return;
+  }
   if (!qrToken) {
     masaEtiket.textContent = 'Masa bulunamadı';
     renderState(`

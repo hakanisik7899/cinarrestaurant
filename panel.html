@@ -265,8 +265,9 @@
   <p style="margin-top:14px;">Menü & Sipariş için QR kodu okutun</p>
 </div>
 
-<script type="module">
-import { supabase } from './js/supabase-client.js';
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
 
 const money = (n) => '₺' + Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const ORDER_ORIGIN = window.location.origin + window.location.pathname.replace(/panel\.html$/, '');
@@ -278,6 +279,10 @@ const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 
 async function checkSession() {
+  if (window.cinarSupabaseYuklenemedi) {
+    loginError.textContent = 'Sistem yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.';
+    return;
+  }
   const { data } = await supabase.auth.getSession();
   if (data.session) {
     showPanel();
@@ -290,11 +295,15 @@ async function checkSession() {
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
+  if (window.cinarSupabaseYuklenemedi) {
+    loginError.textContent = 'Sistem yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.';
+    return;
+  }
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    loginError.textContent = 'Giriş başarısız: e-posta veya şifre hatalı.';
+    loginError.textContent = 'Giriş başarısız: ' + error.message;
     return;
   }
   showPanel();
