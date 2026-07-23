@@ -843,6 +843,7 @@
     <div class="menu-grid" id="menuGrid"></div>
 
     <p class="menu-note">Fiyatlarımız mevsime ve güncel maliyetlere göre değişebilir. Güncel fiyat bilgisi için lütfen bizi arayın.</p>
+    <p class="menu-note">📱 Restoranımızdaysanız masanızdaki QR kodu okutarak menüye göz atabilir ve doğrudan sipariş verebilirsiniz.</p>
   </div>
 </section>
 
@@ -1040,7 +1041,9 @@
 
 <a class="whatsapp-float" href="https://wa.me/904462140777" target="_blank" rel="noopener" aria-label="WhatsApp">💬</a>
 
-<script>
+<script type="module">
+  import { supabase } from './js/supabase-client.js';
+
   document.getElementById('year').textContent = new Date().getFullYear();
 
   /* ---------- Header scroll state ---------- */
@@ -1070,7 +1073,10 @@
   revealEls.forEach(el => io.observe(el));
 
   /* ---------- Menu data ---------- */
-  const menuData = {
+  // Menü artık Supabase'den (menu_kategoriler / menu_urunler) yükleniyor;
+  // bu sabit veri yalnızca DB'ye ulaşılamazsa (bağlantı sorunu, boş proje
+  // vb.) yedek (fallback) olarak kullanılır — bkz. loadMenuFromSupabase().
+  const FALLBACK_MENU = {
     "Izgara & Kebap": [
       { ad: "Patlıcanlı Köfte Kebap", aciklama: "Bulgur pilavı ve közlenmiş sebzelerle servis edilen özel kebabımız.", fiyat: "[₺ PLACEHOLDER]", gorsel: "PatlicanKebap.jpeg", rozet: "Şefin Önerisi" },
       { ad: "Karışık Kebap Tabağı", aciklama: "Adana, kuşbaşı, pide ve mevsim garnitürleriyle zengin karışık tabak.", fiyat: "[₺ PLACEHOLDER]", gorsel: "karisikkebap.jpeg", rozet: "Popüler" },
@@ -1102,7 +1108,10 @@
 
   const tabsEl = document.getElementById('menuTabs');
   const gridEl = document.getElementById('menuGrid');
-  const categories = Object.keys(menuData);
+  const moneyFormat = (n) => '₺' + Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  let menuData = FALLBACK_MENU;
+  let categories = Object.keys(menuData);
 
   function renderMenu(category) {
     gridEl.innerHTML = '';
@@ -1142,8 +1151,42 @@
     });
   }
 
+  // Menüyü Supabase'den yükle (tek doğruluk kaynağı — panel.html'den
+  // yapılan değişiklikler sayfa yenilenince burada da görünür). Herhangi
+  // bir sebeple veri gelmezse (ağ hatası, boş tablo) FALLBACK_MENU ile
+  // sayfa yine de çalışır durumda kalır.
+  async function loadMenuFromSupabase() {
+    const [{ data: katData, error: katErr }, { data: urunData, error: urunErr }] = await Promise.all([
+      supabase.from('menu_kategoriler').select('*').eq('aktif', true).order('sira'),
+      supabase.from('menu_urunler').select('*').eq('stokta', true).order('sira'),
+    ]);
+
+    if (katErr || urunErr || !katData || katData.length === 0) return;
+
+    const dbMenu = {};
+    katData.forEach(kat => { dbMenu[kat.ad] = []; });
+    (urunData || []).forEach(urun => {
+      const kat = katData.find(k => k.id === urun.kategori_id);
+      if (!kat) return;
+      dbMenu[kat.ad].push({
+        ad: urun.ad,
+        aciklama: urun.aciklama,
+        fiyat: moneyFormat(urun.fiyat),
+        gorsel: urun.gorsel_url,
+        rozet: urun.rozet,
+        featured: urun.one_cikan,
+      });
+    });
+
+    menuData = dbMenu;
+    categories = Object.keys(menuData);
+    renderTabs();
+    renderMenu(categories[0]);
+  }
+
   renderTabs();
   renderMenu(categories[0]);
+  loadMenuFromSupabase();
 
   /* ---------- Gallery ---------- */
   const galleryImages = [

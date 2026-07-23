@@ -1,0 +1,151 @@
+/* Çınar Restaurant — paylaşılan tasarım sistemi.
+   index.html'deki :root değişkenleri ve temel bileşenlerle birebir aynı;
+   masa.html / panel.html / mutfak.html buradan içe aktarır. */
+
+:root {
+  --cinar-green:    #2F4A3C;
+  --cinar-green-2:  #3E6350;
+  --terracotta:     #C4703E;
+  --terracotta-dark:#A85A2C;
+  --cream:          #F5EFE4;
+  --sand:           #E8DDC8;
+  --charcoal:       #23201C;
+  --muted:          #6B6459;
+  --gold:           #B08D4C;
+  --success:        #3E7B4F;
+  --danger:         #B23B3B;
+  --radius: 16px;
+  --shadow-soft: 0 20px 50px -20px rgba(35, 32, 28, 0.35);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--charcoal);
+  background: var(--cream);
+  line-height: 1.6;
+}
+
+h1, h2, h3, .display {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+img { max-width: 100%; display: block; }
+a { text-decoration: none; color: inherit; }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--terracotta);
+  margin-bottom: 10px;
+}
+.eyebrow::before { content: ""; width: 24px; height: 1px; background: var(--gold); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--terracotta); color: var(--cream); box-shadow: 0 12px 30px -10px rgba(196,112,62,0.6); }
+.btn-primary:hover:not(:disabled) { transform: translateY(-2px); background: var(--terracotta-dark); }
+.btn-dark { background: var(--cinar-green); color: var(--cream); }
+.btn-dark:hover:not(:disabled) { transform: translateY(-2px); background: var(--cinar-green-2); }
+.btn-outline { background: transparent; color: var(--cinar-green); border-color: var(--cinar-green); }
+.btn-outline:hover:not(:disabled) { background: var(--cinar-green); color: var(--cream); }
+.btn-danger { background: var(--danger); color: var(--cream); }
+.btn-danger:hover:not(:disabled) { transform: translateY(-2px); opacity: 0.9; }
+.btn-sm { padding: 9px 18px; font-size: 0.85rem; }
+
+.card {
+  background: var(--cream);
+  border-radius: var(--radius);
+  box-shadow: 0 14px 34px -18px rgba(35,32,28,0.25);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: var(--cream);
+}
+.badge-status-beklemede { background: var(--gold); }
+.badge-status-onaylandi { background: var(--cinar-green); }
+.badge-status-hazirlaniyor { background: var(--terracotta); }
+.badge-status-hazir { background: var(--success); }
+.badge-status-teslim { background: var(--muted); }
+.badge-status-iptal { background: var(--danger); }
+
+input, select, textarea {
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(107,100,89,0.28);
+  background: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  color: var(--charcoal);
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--terracotta); }
+label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--cinar-green);
+  color: var(--cream);
+  padding: 14px 22px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  font-size: 0.9rem;
+  z-index: 1000;
+  max-width: 320px;
+}
+.toast.error { background: var(--danger); }
+
+.spinner {
+  width: 22px; height: 22px;
+  border: 3px solid rgba(47,74,60,0.15);
+  border-top-color: var(--cinar-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mutfak Ekranı | Çınar Restaurant</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/cinar-theme.css">
+<style>
+  body { background: var(--charcoal); color: var(--cream); }
+
+  .login-wrap {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .login-card { max-width: 380px; width: 100%; padding: 40px 32px; text-align: center; background: var(--cream); color: var(--charcoal); }
+  .login-card img { height: 56px; margin: 0 auto 16px; border-radius: 50%; }
+  .login-card h1 { font-size: 1.3rem; margin-bottom: 4px; }
+  .login-card p { color: var(--muted); font-size: 0.88rem; margin-bottom: 24px; }
+  .login-card .field { text-align: left; margin-bottom: 14px; }
+  .login-card .field label { display: block; margin-bottom: 6px; }
+  .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 10px; min-height: 18px; }
+
+  header.mutfak-header {
+    background: #1a1815;
+    padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+    border-bottom: 2px solid var(--terracotta);
+  }
+  header.mutfak-header .brand { display: flex; align-items: center; gap: 10px; }
+  header.mutfak-header img { height: 36px; width: 36px; border-radius: 50%; }
+  header.mutfak-header h1 { font-size: 1.05rem; color: var(--cream); }
+  header.mutfak-header button { background: none; border: 1px solid rgba(245,239,228,0.3); color: var(--cream); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-size: 0.82rem; font-family: inherit; }
+
+  main.mutfak-main { max-width: 1300px; margin: 0 auto; padding: 24px; }
+  .kolonlar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .kolon h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--terracotta); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(245,239,228,0.15); }
+  .kolon-liste { display: flex; flex-direction: column; gap: 12px; min-height: 100px; }
+
+  .mutfak-card {
+    background: #2a2621;
+    border-radius: 14px;
+    padding: 16px;
+    border-left: 4px solid var(--gold);
+  }
+  .mutfak-card.onaylandi { border-left-color: var(--terracotta); }
+  .mutfak-card.hazirlaniyor { border-left-color: var(--gold); }
+  .mutfak-card.hazir { border-left-color: var(--success); }
+  .mutfak-card .top-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .mutfak-card .masa-adi { font-family: 'Fraunces', serif; font-size: 1.15rem; color: var(--cream); }
+  .mutfak-card .zaman { font-size: 0.75rem; color: rgba(245,239,228,0.5); }
+  .mutfak-card .kalem-row { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 4px 0; color: rgba(245,239,228,0.9); }
+  .mutfak-card .not-row { font-size: 0.8rem; color: var(--gold); margin: 8px 0; font-style: italic; }
+  .mutfak-card .btn { width: 100%; margin-top: 12px; }
+  .empty-col { color: rgba(245,239,228,0.35); font-size: 0.85rem; text-align: center; padding: 30px 0; }
+
+  @media (max-width: 900px) {
+    .kolonlar { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="card login-card">
+    <img src="logo.png" alt="Çınar Restaurant">
+    <h1>Mutfak Ekranı</h1>
+    <p>Personel girişi</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">E-posta</label>
+        <input type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Şifre</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Giriş Yap</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<div id="mutfakWrap" style="display:none;">
+  <header class="mutfak-header">
+    <div class="brand">
+      <img src="logo.png" alt="Çınar Restaurant">
+      <h1>Mutfak Ekranı</h1>
+    </div>
+    <button id="logoutBtn">Çıkış Yap</button>
+  </header>
+
+  <main class="mutfak-main">
+    <div class="kolonlar">
+      <div class="kolon">
+        <h2>Onaylandı</h2>
+        <div class="kolon-liste" id="kolon-onaylandi"></div>
+      </div>
+      <div class="kolon">
+        <h2>Hazırlanıyor</h2>
+        <div class="kolon-liste" id="kolon-hazirlaniyor"></div>
+      </div>
+      <div class="kolon">
+        <h2>Hazır</h2>
+        <div class="kolon-liste" id="kolon-hazir"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-client.js';
+
+const money = (n) => '₺' + Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const loginWrap = document.getElementById('loginWrap');
+const mutfakWrap = document.getElementById('mutfakWrap');
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+
+async function checkSession() {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    showMutfak();
+  } else {
+    loginWrap.style.display = 'flex';
+    mutfakWrap.style.display = 'none';
+  }
+}
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  loginError.textContent = '';
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    loginError.textContent = 'Giriş başarısız: e-posta veya şifre hatalı.';
+    return;
+  }
+  showMutfak();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  window.location.reload();
+});
+
+function showMutfak() {
+  loginWrap.style.display = 'none';
+  mutfakWrap.style.display = 'block';
+  loadSiparisler();
+  subscribeRealtime();
+}
+
+const NEXT_DURUM = { onaylandi: 'hazirlaniyor', hazirlaniyor: 'hazir', hazir: 'teslim' };
+const NEXT_LABEL = { onaylandi: 'Hazırlanıyor Yap', hazirlaniyor: 'Hazır İşaretle', hazir: 'Teslim Edildi' };
+
+async function loadSiparisler() {
+  const { data, error } = await supabase
+    .from('siparisler')
+    .select('*, masalar(masa_no), siparis_kalemleri(urun_ad, adet, birim_fiyat, kalem_not)')
+    .in('durum', ['onaylandi', 'hazirlaniyor', 'hazir'])
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+  renderKolonlar(data || []);
+}
+
+function renderKolonlar(siparisler) {
+  ['onaylandi', 'hazirlaniyor', 'hazir'].forEach((durum) => {
+    const kolonEl = document.getElementById('kolon-' + durum);
+    kolonEl.innerHTML = '';
+    const grup = siparisler.filter((s) => s.durum === durum);
+
+    if (grup.length === 0) {
+      kolonEl.innerHTML = '<div class="empty-col">Sipariş yok</div>';
+      return;
+    }
+
+    grup.forEach((s) => {
+      const zaman = new Date(s.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+      const card = document.createElement('div');
+      card.className = 'mutfak-card ' + durum;
+      card.innerHTML = `
+        <div class="top-row">
+          <span class="masa-adi">Masa ${s.masalar?.masa_no ?? '?'}</span>
+          <span class="zaman">${zaman}</span>
+        </div>
+        ${(s.siparis_kalemleri || []).map((k) => `
+          <div class="kalem-row"><span>${k.adet}x ${k.urun_ad}</span></div>
+        `).join('')}
+        ${s.musteri_not ? `<div class="not-row">Not: ${s.musteri_not}</div>` : ''}
+        <button class="btn btn-primary btn-sm" data-next>${NEXT_LABEL[durum]}</button>
+      `;
+      card.querySelector('[data-next]').addEventListener('click', () => updateDurum(s.id, NEXT_DURUM[durum]));
+      kolonEl.appendChild(card);
+    });
+  });
+}
+
+async function updateDurum(id, durum) {
+  await supabase.from('siparisler').update({ durum }).eq('id', id);
+  loadSiparisler();
+}
+
+function subscribeRealtime() {
+  supabase
+    .channel('mutfak-siparisler')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'siparisler' }, () => {
+      loadSiparisler();
+    })
+    .subscribe();
+}
+
+checkSession();
+</script>
+</body>
+</html>

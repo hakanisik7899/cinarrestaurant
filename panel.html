@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kontrol Paneli | Çınar Restaurant</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/cinar-theme.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  body { background: var(--sand); }
+
+  .login-wrap {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .login-card { max-width: 380px; width: 100%; padding: 40px 32px; text-align: center; }
+  .login-card img { height: 56px; margin: 0 auto 16px; border-radius: 50%; }
+  .login-card h1 { font-size: 1.3rem; margin-bottom: 4px; }
+  .login-card p { color: var(--muted); font-size: 0.88rem; margin-bottom: 24px; }
+  .login-card .field { text-align: left; margin-bottom: 14px; }
+  .login-card .field label { display: block; margin-bottom: 6px; }
+  .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 10px; min-height: 18px; }
+
+  header.panel-header {
+    background: var(--cinar-green);
+    color: var(--cream);
+    padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  header.panel-header .brand { display: flex; align-items: center; gap: 10px; }
+  header.panel-header img { height: 36px; width: 36px; border-radius: 50%; }
+  header.panel-header h1 { font-size: 1.05rem; }
+  header.panel-header button { background: none; border: 1px solid rgba(245,239,228,0.4); color: var(--cream); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-size: 0.82rem; font-family: inherit; }
+
+  .tabs { display: flex; gap: 8px; padding: 16px 24px 0; max-width: 1100px; margin: 0 auto; }
+  .tab-btn { padding: 10px 20px; border-radius: 12px 12px 0 0; border: none; background: transparent; color: var(--muted); font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+  .tab-btn.active { background: var(--cream); color: var(--cinar-green); }
+
+  main.panel-main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .panel-view { display: none; }
+  .panel-view.active { display: block; }
+
+  .siparis-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .siparis-card { padding: 18px; }
+  .siparis-card .top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .siparis-card .masa-adi { font-family: 'Fraunces', serif; font-size: 1.1rem; }
+  .siparis-card .zaman { font-size: 0.76rem; color: var(--muted); }
+  .siparis-card .kalemler { font-size: 0.86rem; margin-bottom: 10px; }
+  .siparis-card .kalem-row { display: flex; justify-content: space-between; padding: 3px 0; }
+  .siparis-card .not-row { font-size: 0.8rem; color: var(--terracotta-dark); margin-bottom: 10px; font-style: italic; }
+  .siparis-card .toplam { font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; }
+  .siparis-card .actions { display: flex; gap: 8px; }
+  .siparis-card .actions .btn { flex: 1; }
+
+  .section-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .section-toolbar h2 { font-size: 1.2rem; }
+
+  .kategori-block { margin-bottom: 22px; }
+  .kategori-block .kategori-baslik { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .kategori-block .kategori-baslik h3 { font-size: 1rem; color: var(--cinar-green); }
+  .urun-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 8px; }
+  .urun-row .info { flex: 1; }
+  .urun-row .info h4 { font-size: 0.94rem; }
+  .urun-row .info .meta { font-size: 0.78rem; color: var(--muted); }
+  .urun-row .fiyat-input { width: 100px; }
+  .urun-row .stok-toggle { font-size: 0.78rem; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(23,22,18,0.55); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { max-width: 440px; width: 100%; padding: 26px; max-height: 88vh; overflow-y: auto; }
+  .modal h3 { margin-bottom: 16px; }
+  .modal .field { margin-bottom: 14px; }
+  .modal .field label { display: block; margin-bottom: 6px; }
+  .modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal .actions { display: flex; gap: 10px; margin-top: 18px; }
+  .modal .actions .btn { flex: 1; }
+  .checkbox-field { display: flex; align-items: center; gap: 8px; }
+  .checkbox-field input { width: auto; }
+
+  .masa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .masa-card { padding: 18px; text-align: center; }
+  .masa-card h3 { font-size: 1.3rem; margin-bottom: 4px; }
+  .masa-card .durum-etiket { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; }
+  .masa-card canvas { margin: 0 auto 12px; border-radius: 8px; }
+  .masa-card .btn-row { display: flex; gap: 8px; }
+  .masa-card .btn-row .btn { flex: 1; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="card login-card">
+    <img src="logo.png" alt="Çınar Restaurant">
+    <h1>Kontrol Paneli</h1>
+    <p>Personel girişi</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">E-posta</label>
+        <input type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Şifre</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Giriş Yap</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<div id="panelWrap" style="display:none;">
+  <header class="panel-header">
+    <div class="brand">
+      <img src="logo.png" alt="Çınar Restaurant">
+      <h1>Kontrol Paneli</h1>
+    </div>
+    <button id="logoutBtn">Çıkış Yap</button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="siparisler">Siparişler</button>
+    <button class="tab-btn" data-view="menu">Menü Yönetimi</button>
+    <button class="tab-btn" data-view="masalar">Masalar & QR</button>
+  </nav>
+
+  <main class="panel-main">
+    <section class="panel-view active" id="view-siparisler">
+      <div class="section-toolbar">
+        <h2>Bekleyen & Aktif Siparişler</h2>
+      </div>
+      <div class="siparis-grid" id="siparisGrid"></div>
+      <div class="empty-state" id="siparisEmpty" style="display:none;">Şu anda aktif sipariş yok.</div>
+    </section>
+
+    <section class="panel-view" id="view-menu">
+      <div class="section-toolbar">
+        <h2>Menü Yönetimi</h2>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-outline btn-sm" id="yeniKategoriBtn">+ Kategori</button>
+          <button class="btn btn-primary btn-sm" id="yeniUrunBtn">+ Ürün</button>
+        </div>
+      </div>
+      <div id="menuYonetimi"></div>
+    </section>
+
+    <section class="panel-view" id="view-masalar">
+      <div class="section-toolbar">
+        <h2>Masalar & QR Kodları</h2>
+        <button class="btn btn-primary btn-sm" id="yeniMasaBtn">+ Masa Ekle</button>
+      </div>
+      <div class="masa-grid" id="masaGrid"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Ürün Modal -->
+<div class="modal-overlay" id="urunModalOverlay">
+  <div class="modal card">
+    <h3 id="urunModalBaslik">Yeni Ürün</h3>
+    <form id="urunForm">
+      <input type="hidden" id="urunId">
+      <div class="field">
+        <label for="urunKategori">Kategori</label>
+        <select id="urunKategori" required></select>
+      </div>
+      <div class="field">
+        <label for="urunAd">Ürün Adı</label>
+        <input type="text" id="urunAd" required>
+      </div>
+      <div class="field">
+        <label for="urunAciklama">Açıklama</label>
+        <textarea id="urunAciklama" rows="2"></textarea>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="urunFiyat">Fiyat (₺)</label>
+          <input type="number" id="urunFiyat" step="0.01" min="0" required>
+        </div>
+        <div class="field">
+          <label for="urunSira">Sıra</label>
+          <input type="number" id="urunSira" step="1" min="0" value="0">
+        </div>
+      </div>
+      <div class="field">
+        <label for="urunGorsel">Görsel dosya adı (opsiyonel, örn. incik.jpeg)</label>
+        <input type="text" id="urunGorsel">
+      </div>
+      <div class="field">
+        <label for="urunRozet">Rozet (opsiyonel, örn. ★ Meşhur)</label>
+        <input type="text" id="urunRozet">
+      </div>
+      <div class="field checkbox-field">
+        <input type="checkbox" id="urunOneCikan">
+        <label for="urunOneCikan" style="text-transform:none; font-weight:500;">Öne çıkan ürün</label>
+      </div>
+      <div class="field checkbox-field">
+        <input type="checkbox" id="urunStokta" checked>
+        <label for="urunStokta" style="text-transform:none; font-weight:500;">Stokta / menüde görünür</label>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-outline" id="urunSilBtn" style="display:none;">Sil</button>
+        <button type="button" class="btn btn-outline" id="urunIptalBtn">İptal</button>
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Kategori Modal -->
+<div class="modal-overlay" id="katModalOverlay">
+  <div class="modal card">
+    <h3>Yeni Kategori</h3>
+    <form id="katForm">
+      <div class="field">
+        <label for="katAd">Kategori Adı</label>
+        <input type="text" id="katAd" required>
+      </div>
+      <div class="field">
+        <label for="katSira">Sıra</label>
+        <input type="number" id="katSira" step="1" min="0" value="0">
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-outline" id="katIptalBtn">İptal</button>
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Masa Modal -->
+<div class="modal-overlay" id="masaModalOverlay">
+  <div class="modal card">
+    <h3>Yeni Masa</h3>
+    <form id="masaForm">
+      <div class="field">
+        <label for="masaNo">Masa Numarası / Adı</label>
+        <input type="text" id="masaNo" required placeholder="Örn: 6 veya Teras-1">
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-outline" id="masaIptalBtn">İptal</button>
+        <button type="submit" class="btn btn-primary">Ekle</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- QR yazdırma alanı -->
+<div id="printArea" style="display:none;">
+  <img src="logo.png" style="height:50px; margin-bottom:10px;">
+  <h2 id="printMasaAdi" style="font-family:'Fraunces',serif; margin-bottom:14px;"></h2>
+  <canvas id="printCanvas"></canvas>
+  <p style="margin-top:14px;">Menü & Sipariş için QR kodu okutun</p>
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-client.js';
+
+const money = (n) => '₺' + Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const ORDER_ORIGIN = window.location.origin + window.location.pathname.replace(/panel\.html$/, '');
+
+/* ---------------- Auth ---------------- */
+const loginWrap = document.getElementById('loginWrap');
+const panelWrap = document.getElementById('panelWrap');
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+
+async function checkSession() {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    showPanel();
+  } else {
+    loginWrap.style.display = 'flex';
+    panelWrap.style.display = 'none';
+  }
+}
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  loginError.textContent = '';
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    loginError.textContent = 'Giriş başarısız: e-posta veya şifre hatalı.';
+    return;
+  }
+  showPanel();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  window.location.reload();
+});
+
+function showPanel() {
+  loginWrap.style.display = 'none';
+  panelWrap.style.display = 'block';
+  loadSiparisler();
+  loadMenuYonetimi();
+  loadMasalar();
+  subscribeRealtime();
+}
+
+/* ---------------- Sekmeler ---------------- */
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.panel-view').forEach((v) => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ---------------- Sesli uyarı ---------------- */
+function beklemedeSesi() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+  } catch (e) { /* ses çalınamadıysa sessizce geç */ }
+}
+
+function showToast(message, isError) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/* ---------------- Siparişler ---------------- */
+const DURUM_ETIKET = {
+  beklemede: 'Onay Bekliyor',
+  onaylandi: 'Onaylandı — Mutfakta',
+  hazirlaniyor: 'Hazırlanıyor',
+  hazir: 'Hazır',
+  teslim: 'Teslim Edildi',
+  iptal: 'İptal',
+};
+
+async function loadSiparisler() {
+  const { data, error } = await supabase
+    .from('siparisler')
+    .select('*, masalar(masa_no), siparis_kalemleri(urun_ad, adet, birim_fiyat, kalem_not)')
+    .in('durum', ['beklemede', 'onaylandi', 'hazirlaniyor', 'hazir'])
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+  renderSiparisler(data || []);
+}
+
+function renderSiparisler(siparisler) {
+  const grid = document.getElementById('siparisGrid');
+  const empty = document.getElementById('siparisEmpty');
+  grid.innerHTML = '';
+
+  if (siparisler.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  siparisler.forEach((s) => {
+    const card = document.createElement('div');
+    card.className = 'siparis-card card';
+    const zaman = new Date(s.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    let actionsHtml = '';
+    if (s.durum === 'beklemede') {
+      actionsHtml = `
+        <button class="btn btn-primary btn-sm" data-action="onayla">Onayla</button>
+        <button class="btn btn-danger btn-sm" data-action="iptal">İptal</button>
+      `;
+    } else {
+      actionsHtml = `<button class="btn btn-outline btn-sm" data-action="iptal">İptal Et</button>`;
+    }
+
+    card.innerHTML = `
+      <div class="top-row">
+        <div>
+          <div class="masa-adi">Masa ${s.masalar?.masa_no ?? '?'}</div>
+          <div class="zaman">${zaman}</div>
+        </div>
+        <span class="badge badge-status-${s.durum}">${DURUM_ETIKET[s.durum] || s.durum}</span>
+      </div>
+      <div class="kalemler">
+        ${(s.siparis_kalemleri || []).map((k) => `
+          <div class="kalem-row"><span>${k.adet}x ${k.urun_ad}</span><span>${money(k.birim_fiyat * k.adet)}</span></div>
+        `).join('')}
+      </div>
+      ${s.musteri_not ? `<div class="not-row">Not: ${s.musteri_not}</div>` : ''}
+      <div class="toplam"><span>Toplam</span><span>${money(s.toplam_tutar)}</span></div>
+      <div class="actions">${actionsHtml}</div>
+    `;
+
+    const onaylaBtn = card.querySelector('[data-action="onayla"]');
+    if (onaylaBtn) onaylaBtn.addEventListener('click', () => updateSiparisDurum(s.id, 'onaylandi'));
+    const iptalBtn = card.querySelector('[data-action="iptal"]');
+    if (iptalBtn) iptalBtn.addEventListener('click', () => {
+      if (confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) updateSiparisDurum(s.id, 'iptal');
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+async function updateSiparisDurum(id, durum) {
+  const { error } = await supabase.from('siparisler').update({ durum }).eq('id', id);
+  if (error) {
+    showToast('Güncelleme başarısız oldu.', true);
+    return;
+  }
+  loadSiparisler();
+}
+
+function subscribeRealtime() {
+  supabase
+    .channel('panel-siparisler')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'siparisler' }, (payload) => {
+      if (payload.new.durum === 'beklemede') {
+        beklemedeSesi();
+        showToast('Yeni sipariş geldi!');
+      }
+      loadSiparisler();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'siparisler' }, () => {
+      loadSiparisler();
+    })
+    .subscribe();
+}
+
+/* ---------------- Menü Yönetimi ---------------- */
+let kategorilerCache = [];
+let urunlerCache = [];
+
+async function loadMenuYonetimi() {
+  const [{ data: katData }, { data: urunData }] = await Promise.all([
+    supabase.from('menu_kategoriler').select('*').order('sira'),
+    supabase.from('menu_urunler').select('*').order('sira'),
+  ]);
+  kategorilerCache = katData || [];
+  urunlerCache = urunData || [];
+  renderMenuYonetimi();
+  fillKategoriSelect();
+}
+
+function renderMenuYonetimi() {
+  const wrap = document.getElementById('menuYonetimi');
+  wrap.innerHTML = '';
+
+  kategorilerCache.forEach((kat) => {
+    const block = document.createElement('div');
+    block.className = 'kategori-block';
+    const urunlerBuKat = urunlerCache.filter((u) => u.kategori_id === kat.id);
+
+    block.innerHTML = `
+      <div class="kategori-baslik">
+        <h3>${kat.ad} ${kat.aktif ? '' : '<span style="color:var(--muted); font-weight:400;">(pasif)</span>'}</h3>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline btn-sm" data-edit-kat="${kat.id}">Düzenle</button>
+          <button class="btn btn-danger btn-sm" data-del-kat="${kat.id}">Sil</button>
+        </div>
+      </div>
+      <div class="urun-list-panel"></div>
+    `;
+
+    const urunListEl = block.querySelector('.urun-list-panel');
+    urunlerBuKat.forEach((u) => {
+      const row = document.createElement('div');
+      row.className = 'urun-row card';
+      row.innerHTML = `
+        <div class="info">
+          <h4>${u.ad} ${u.rozet ? `<span class="badge">${u.rozet}</span>` : ''}</h4>
+          <div class="meta">${u.aciklama || ''}</div>
+        </div>
+        <div class="fiyat-input">${money(u.fiyat)}</div>
+        <label class="stok-toggle"><input type="checkbox" data-stok-toggle="${u.id}" ${u.stokta ? 'checked' : ''}> Stokta</label>
+        <button class="btn btn-outline btn-sm" data-edit-urun="${u.id}">Düzenle</button>
+      `;
+      row.querySelector('[data-stok-toggle]').addEventListener('change', async (e) => {
+        await supabase.from('menu_urunler').update({ stokta: e.target.checked }).eq('id', u.id);
+        loadMenuYonetimi();
+      });
+      row.querySelector('[data-edit-urun]').addEventListener('click', () => openUrunModal(u));
+      urunListEl.appendChild(row);
+    });
+
+    block.querySelector('[data-edit-kat]').addEventListener('click', () => openKatModal(kat));
+    block.querySelector('[data-del-kat]').addEventListener('click', async () => {
+      if (!confirm(`"${kat.ad}" kategorisini ve içindeki tüm ürünleri silmek istediğinize emin misiniz?`)) return;
+      await supabase.from('menu_kategoriler').delete().eq('id', kat.id);
+      loadMenuYonetimi();
+    });
+
+    wrap.appendChild(block);
+  });
+}
+
+function fillKategoriSelect() {
+  const select = document.getElementById('urunKategori');
+  select.innerHTML = kategorilerCache.map((k) => `<option value="${k.id}">${k.ad}</option>`).join('');
+}
+
+/* --- Ürün modal --- */
+const urunModalOverlay = document.getElementById('urunModalOverlay');
+const urunForm = document.getElementById('urunForm');
+const urunSilBtn = document.getElementById('urunSilBtn');
+
+function openUrunModal(urun) {
+  document.getElementById('urunModalBaslik').textContent = urun ? 'Ürünü Düzenle' : 'Yeni Ürün';
+  document.getElementById('urunId').value = urun?.id || '';
+  document.getElementById('urunKategori').value = urun?.kategori_id || kategorilerCache[0]?.id || '';
+  document.getElementById('urunAd').value = urun?.ad || '';
+  document.getElementById('urunAciklama').value = urun?.aciklama || '';
+  document.getElementById('urunFiyat').value = urun?.fiyat ?? '';
+  document.getElementById('urunSira').value = urun?.sira ?? 0;
+  document.getElementById('urunGorsel').value = urun?.gorsel_url || '';
+  document.getElementById('urunRozet').value = urun?.rozet || '';
+  document.getElementById('urunOneCikan').checked = !!urun?.one_cikan;
+  document.getElementById('urunStokta').checked = urun ? !!urun.stokta : true;
+  urunSilBtn.style.display = urun ? 'inline-flex' : 'none';
+  urunModalOverlay.classList.add('open');
+}
+
+document.getElementById('yeniUrunBtn').addEventListener('click', () => openUrunModal(null));
+document.getElementById('urunIptalBtn').addEventListener('click', () => urunModalOverlay.classList.remove('open'));
+
+urunForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('urunId').value;
+  const payload = {
+    kategori_id: Number(document.getElementById('urunKategori').value),
+    ad: document.getElementById('urunAd').value.trim(),
+    aciklama: document.getElementById('urunAciklama').value.trim(),
+    fiyat: Number(document.getElementById('urunFiyat').value),
+    sira: Number(document.getElementById('urunSira').value) || 0,
+    gorsel_url: document.getElementById('urunGorsel').value.trim(),
+    rozet: document.getElementById('urunRozet').value.trim(),
+    one_cikan: document.getElementById('urunOneCikan').checked,
+    stokta: document.getElementById('urunStokta').checked,
+  };
+
+  const { error } = id
+    ? await supabase.from('menu_urunler').update(payload).eq('id', id)
+    : await supabase.from('menu_urunler').insert(payload);
+
+  if (error) {
+    showToast('Kaydedilemedi: ' + error.message, true);
+    return;
+  }
+  urunModalOverlay.classList.remove('open');
+  loadMenuYonetimi();
+});
+
+urunSilBtn.addEventListener('click', async () => {
+  const id = document.getElementById('urunId').value;
+  if (!id || !confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
+  await supabase.from('menu_urunler').delete().eq('id', id);
+  urunModalOverlay.classList.remove('open');
+  loadMenuYonetimi();
+});
+
+/* --- Kategori modal --- */
+const katModalOverlay = document.getElementById('katModalOverlay');
+const katForm = document.getElementById('katForm');
+let duzenlenenKatId = null;
+
+function openKatModal(kat) {
+  duzenlenenKatId = kat?.id || null;
+  document.getElementById('katAd').value = kat?.ad || '';
+  document.getElementById('katSira').value = kat?.sira ?? 0;
+  katModalOverlay.classList.add('open');
+}
+
+document.getElementById('yeniKategoriBtn').addEventListener('click', () => openKatModal(null));
+document.getElementById('katIptalBtn').addEventListener('click', () => katModalOverlay.classList.remove('open'));
+
+katForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    ad: document.getElementById('katAd').value.trim(),
+    sira: Number(document.getElementById('katSira').value) || 0,
+  };
+  const { error } = duzenlenenKatId
+    ? await supabase.from('menu_kategoriler').update(payload).eq('id', duzenlenenKatId)
+    : await supabase.from('menu_kategoriler').insert(payload);
+
+  if (error) {
+    showToast('Kaydedilemedi: ' + error.message, true);
+    return;
+  }
+  katModalOverlay.classList.remove('open');
+  loadMenuYonetimi();
+});
+
+/* ---------------- Masalar & QR ---------------- */
+async function loadMasalar() {
+  const { data, error } = await supabase.from('masalar').select('*').order('masa_no');
+  if (error) return;
+  renderMasalar(data || []);
+}
+
+function renderMasalar(masalar) {
+  const grid = document.getElementById('masaGrid');
+  grid.innerHTML = '';
+  masalar.forEach((masa) => {
+    const url = `${ORDER_ORIGIN}masa.html?t=${masa.qr_token}`;
+    const card = document.createElement('div');
+    card.className = 'masa-card card';
+    card.innerHTML = `
+      <h3>Masa ${masa.masa_no}</h3>
+      <div class="durum-etiket">${masa.aktif ? 'Aktif' : 'Pasif'}</div>
+      <canvas></canvas>
+      <div class="btn-row">
+        <button class="btn btn-outline btn-sm" data-print>Yazdır</button>
+        <button class="btn ${masa.aktif ? 'btn-danger' : 'btn-primary'} btn-sm" data-toggle>${masa.aktif ? 'Pasifleştir' : 'Aktifleştir'}</button>
+      </div>
+    `;
+    const canvas = card.querySelector('canvas');
+    QRCode.toCanvas(canvas, url, { width: 160, margin: 1, color: { dark: '#23201C', light: '#F5EFE4' } });
+
+    card.querySelector('[data-print]').addEventListener('click', () => {
+      document.getElementById('printMasaAdi').textContent = `Masa ${masa.masa_no}`;
+      const printCanvas = document.getElementById('printCanvas');
+      QRCode.toCanvas(printCanvas, url, { width: 260, margin: 1 }, () => {
+        document.getElementById('printArea').style.display = 'flex';
+        window.print();
+        document.getElementById('printArea').style.display = 'none';
+      });
+    });
+
+    card.querySelector('[data-toggle]').addEventListener('click', async () => {
+      await supabase.from('masalar').update({ aktif: !masa.aktif }).eq('id', masa.id);
+      loadMasalar();
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+const masaModalOverlay = document.getElementById('masaModalOverlay');
+document.getElementById('yeniMasaBtn').addEventListener('click', () => masaModalOverlay.classList.add('open'));
+document.getElementById('masaIptalBtn').addEventListener('click', () => masaModalOverlay.classList.remove('open'));
+
+document.getElementById('masaForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const masaNo = document.getElementById('masaNo').value.trim();
+  const { error } = await supabase.from('masalar').insert({ masa_no: masaNo });
+  if (error) {
+    showToast('Masa eklenemedi: ' + error.message, true);
+    return;
+  }
+  document.getElementById('masaForm').reset();
+  masaModalOverlay.classList.remove('open');
+  loadMasalar();
+});
+
+checkSession();
+</script>
+</body>
+</html>

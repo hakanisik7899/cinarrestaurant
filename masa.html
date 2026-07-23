@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Menü & Sipariş | Çınar Restaurant</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/cinar-theme.css">
+<style>
+  body { padding-bottom: 90px; }
+
+  header.masa-header {
+    background: var(--cinar-green);
+    color: var(--cream);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow-soft);
+  }
+  header.masa-header img { height: 40px; width: 40px; border-radius: 50%; background: var(--cream); }
+  header.masa-header .titles h1 { font-size: 1.05rem; color: var(--cream); }
+  header.masa-header .titles span { font-size: 0.78rem; color: rgba(245,239,228,0.75); }
+
+  .state-screen {
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+    gap: 16px;
+  }
+  .state-screen h2 { font-size: 1.4rem; }
+  .state-screen p { color: var(--muted); max-width: 340px; }
+
+  .category-tabs {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 16px 20px;
+    position: sticky;
+    top: 76px;
+    background: var(--cream);
+    z-index: 40;
+    border-bottom: 1px solid rgba(107,100,89,0.15);
+  }
+  .category-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab {
+    flex-shrink: 0;
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: var(--sand);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    color: var(--charcoal);
+  }
+  .cat-tab.active { background: var(--cinar-green); color: var(--cream); }
+
+  .urun-list { padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .urun-card {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    align-items: center;
+  }
+  .urun-card .thumb {
+    width: 76px; height: 76px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--cinar-green), var(--cinar-green-2));
+  }
+  .urun-card .info { flex: 1; min-width: 0; }
+  .urun-card .info .badge { margin-bottom: 4px; }
+  .urun-card h3 { font-size: 1rem; margin-bottom: 3px; }
+  .urun-card p { color: var(--muted); font-size: 0.82rem; margin-bottom: 6px; }
+  .urun-card .price { color: var(--terracotta); font-weight: 700; font-size: 0.95rem; }
+  .urun-card .featured-mark { color: var(--gold); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
+
+  .qty-control {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .qty-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--cinar-green);
+    background: var(--cream);
+    color: var(--cinar-green);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qty-btn.add { background: var(--cinar-green); color: var(--cream); }
+  .qty-num { min-width: 18px; text-align: center; font-weight: 700; }
+
+  .cart-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--cinar-green);
+    color: var(--cream);
+    padding: 16px 20px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 60;
+    box-shadow: 0 -10px 30px -15px rgba(0,0,0,0.4);
+  }
+  .cart-bar.visible { display: flex; }
+  .cart-bar .count { font-size: 0.85rem; color: rgba(245,239,228,0.8); }
+  .cart-bar .total { font-family: 'Fraunces', serif; font-size: 1.15rem; }
+
+  .sheet-overlay {
+    position: fixed; inset: 0;
+    background: rgba(23,22,18,0.55);
+    z-index: 100;
+    display: none;
+  }
+  .sheet-overlay.open { display: block; }
+  .sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    max-height: 82vh;
+    background: var(--cream);
+    border-radius: 22px 22px 0 0;
+    z-index: 101;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet-header {
+    padding: 20px 20px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(107,100,89,0.15);
+  }
+  .sheet-header h2 { font-size: 1.2rem; }
+  .sheet-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); }
+  .sheet-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+  .cart-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(107,100,89,0.1); }
+  .cart-item .info { flex: 1; }
+  .cart-item h4 { font-size: 0.95rem; }
+  .cart-item .line-price { color: var(--muted); font-size: 0.82rem; }
+  .sheet-footer { padding: 16px 20px 24px; border-top: 1px solid rgba(107,100,89,0.15); }
+  .sheet-footer .toplam-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 700; }
+  .sheet-footer textarea { margin-bottom: 12px; min-height: 60px; }
+
+  /* --- Sipariş durum ekranı --- */
+  .durum-screen { padding: 30px 20px; }
+  .durum-card { padding: 26px; text-align: center; }
+  .durum-badge { font-size: 0.85rem; padding: 8px 20px; margin-bottom: 14px; }
+  .durum-steps { display: flex; justify-content: space-between; margin: 24px 0; gap: 4px; }
+  .durum-step { flex: 1; text-align: center; }
+  .durum-step .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--sand); margin: 0 auto 6px; }
+  .durum-step.done .dot { background: var(--cinar-green); }
+  .durum-step span { font-size: 0.68rem; color: var(--muted); }
+  .durum-kalemler { text-align: left; margin-top: 20px; }
+  .durum-kalem-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed rgba(107,100,89,0.2); font-size: 0.9rem; }
+  .durum-toplam { display: flex; justify-content: space-between; margin-top: 12px; font-weight: 700; font-size: 1.05rem; }
+</style>
+</head>
+<body>
+
+<header class="masa-header">
+  <img src="logo.png" alt="Çınar Restaurant logosu">
+  <div class="titles">
+    <h1>Çınar Restaurant</h1>
+    <span id="masaEtiket">Masa yükleniyor…</span>
+  </div>
+</header>
+
+<div id="app">
+  <div class="state-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Masanız doğrulanıyor…</p>
+  </div>
+</div>
+
+<div class="cart-bar" id="cartBar">
+  <div>
+    <div class="count" id="cartCount">0 ürün</div>
+    <div class="total" id="cartTotal">₺0</div>
+  </div>
+  <button class="btn btn-primary" id="cartOpenBtn">Sepeti Gör</button>
+</div>
+
+<div class="sheet-overlay" id="sheetOverlay"></div>
+<div class="sheet" id="cartSheet">
+  <div class="sheet-header">
+    <h2>Sepetiniz</h2>
+    <button class="sheet-close" id="sheetCloseBtn">&times;</button>
+  </div>
+  <div class="sheet-body" id="cartItemsBody"></div>
+  <div class="sheet-footer">
+    <label for="musteriNot">Sipariş Notu (opsiyonel)</label>
+    <textarea id="musteriNot" placeholder="Örn: az acılı olsun"></textarea>
+    <div class="toplam-row">
+      <span>Toplam</span>
+      <span id="sheetToplam">₺0</span>
+    </div>
+    <button class="btn btn-primary" style="width:100%;" id="siparisGonderBtn">Siparişi Gönder</button>
+  </div>
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-client.js';
+
+const app = document.getElementById('app');
+const masaEtiket = document.getElementById('masaEtiket');
+const cartBar = document.getElementById('cartBar');
+const cartCount = document.getElementById('cartCount');
+const cartTotal = document.getElementById('cartTotal');
+const cartOpenBtn = document.getElementById('cartOpenBtn');
+const sheetOverlay = document.getElementById('sheetOverlay');
+const cartSheet = document.getElementById('cartSheet');
+const sheetCloseBtn = document.getElementById('sheetCloseBtn');
+const cartItemsBody = document.getElementById('cartItemsBody');
+const sheetToplam = document.getElementById('sheetToplam');
+const siparisGonderBtn = document.getElementById('siparisGonderBtn');
+const musteriNotInput = document.getElementById('musteriNot');
+
+const params = new URLSearchParams(window.location.search);
+const qrToken = params.get('t');
+
+let masa = null;           // { id, masa_no }
+let kategoriler = [];
+let urunler = [];
+let aktifKategoriId = null;
+const sepet = new Map();   // urun_id -> { urun, adet }
+
+const money = (n) => '₺' + Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function storageKey(masaId) { return `cinar_siparis_${masaId}`; }
+
+function renderState(html) { app.innerHTML = html; }
+
+async function init() {
+  if (!qrToken) {
+    masaEtiket.textContent = 'Masa bulunamadı';
+    renderState(`
+      <div class="state-screen">
+        <h2>QR Kod Geçersiz</h2>
+        <p>Lütfen masanızdaki QR kodu tekrar okutun. Sorun devam ederse personelimizi çağırın.</p>
+      </div>
+    `);
+    return;
+  }
+
+  const { data: masaData, error: masaErr } = await supabase.rpc('masa_dogrula', { p_qr_token: qrToken });
+
+  if (masaErr || !masaData || masaData.length === 0) {
+    masaEtiket.textContent = 'Masa bulunamadı';
+    renderState(`
+      <div class="state-screen">
+        <h2>Masa Doğrulanamadı</h2>
+        <p>Bu QR kod geçersiz veya pasif. Lütfen personelimizi çağırın.</p>
+      </div>
+    `);
+    return;
+  }
+
+  masa = masaData[0];
+  masaEtiket.textContent = `Masa ${masa.masa_no}`;
+
+  const mevcutSiparisId = sessionStorage.getItem(storageKey(masa.id));
+  if (mevcutSiparisId) {
+    showDurumScreen(mevcutSiparisId);
+    return;
+  }
+
+  await loadMenu();
+}
+
+async function loadMenu() {
+  renderState(`
+    <div class="state-screen">
+      <div class="spinner"></div>
+      <p>Menü yükleniyor…</p>
+    </div>
+  `);
+
+  const [{ data: katData, error: katErr }, { data: urunData, error: urunErr }] = await Promise.all([
+    supabase.from('menu_kategoriler').select('*').eq('aktif', true).order('sira'),
+    supabase.from('menu_urunler').select('*').eq('stokta', true).order('sira'),
+  ]);
+
+  if (katErr || urunErr || !katData || katData.length === 0) {
+    renderState(`
+      <div class="state-screen">
+        <h2>Menü Yüklenemedi</h2>
+        <p>Bir şeyler ters gitti. Lütfen sayfayı yenileyin veya personelimizi çağırın.</p>
+      </div>
+    `);
+    return;
+  }
+
+  kategoriler = katData;
+  urunler = urunData || [];
+  aktifKategoriId = kategoriler[0].id;
+
+  renderState(`
+    <div class="category-tabs" id="categoryTabs"></div>
+    <div class="urun-list" id="urunList"></div>
+  `);
+
+  renderTabs();
+  renderUrunler();
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('categoryTabs');
+  tabsEl.innerHTML = '';
+  kategoriler.forEach((kat) => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (kat.id === aktifKategoriId ? ' active' : '');
+    btn.textContent = kat.ad;
+    btn.addEventListener('click', () => {
+      aktifKategoriId = kat.id;
+      tabsEl.querySelectorAll('.cat-tab').forEach((t) => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderUrunler();
+    });
+    tabsEl.appendChild(btn);
+  });
+}
+
+function renderUrunler() {
+  const listEl = document.getElementById('urunList');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  const filtreli = urunler.filter((u) => u.kategori_id === aktifKategoriId);
+
+  if (filtreli.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--muted); padding:20px 0;">Bu kategoride ürün bulunmuyor.</p>';
+    return;
+  }
+
+  filtreli.forEach((urun) => {
+    const card = document.createElement('div');
+    card.className = 'urun-card card';
+    const thumb = urun.gorsel_url
+      ? `<img class="thumb" src="${urun.gorsel_url}" alt="${urun.ad}" loading="lazy">`
+      : `<div class="thumb"></div>`;
+    const adet = sepet.get(urun.id)?.adet || 0;
+
+    card.innerHTML = `
+      ${thumb}
+      <div class="info">
+        ${urun.rozet ? `<span class="badge">${urun.rozet}</span>` : ''}
+        <h3>${urun.ad}</h3>
+        <p>${urun.aciklama}</p>
+        <span class="price">${money(urun.fiyat)}</span>
+      </div>
+      <div class="qty-control" data-urun-id="${urun.id}">
+        ${adet > 0 ? `<button class="qty-btn minus">−</button><span class="qty-num">${adet}</span>` : ''}
+        <button class="qty-btn add">+</button>
+      </div>
+    `;
+
+    const qtyControl = card.querySelector('.qty-control');
+    qtyControl.querySelector('.add').addEventListener('click', () => {
+      addToCart(urun);
+      renderUrunler();
+      renderCartBar();
+    });
+    const minusBtn = qtyControl.querySelector('.minus');
+    if (minusBtn) {
+      minusBtn.addEventListener('click', () => {
+        removeFromCart(urun.id);
+        renderUrunler();
+        renderCartBar();
+      });
+    }
+
+    listEl.appendChild(card);
+  });
+}
+
+function addToCart(urun) {
+  const mevcut = sepet.get(urun.id);
+  if (mevcut) mevcut.adet += 1;
+  else sepet.set(urun.id, { urun, adet: 1 });
+}
+
+function removeFromCart(urunId) {
+  const mevcut = sepet.get(urunId);
+  if (!mevcut) return;
+  mevcut.adet -= 1;
+  if (mevcut.adet <= 0) sepet.delete(urunId);
+}
+
+function sepetToplam() {
+  let toplam = 0;
+  let adetSayisi = 0;
+  sepet.forEach(({ urun, adet }) => {
+    toplam += Number(urun.fiyat) * adet;
+    adetSayisi += adet;
+  });
+  return { toplam, adetSayisi };
+}
+
+function renderCartBar() {
+  const { toplam, adetSayisi } = sepetToplam();
+  if (adetSayisi === 0) {
+    cartBar.classList.remove('visible');
+    return;
+  }
+  cartBar.classList.add('visible');
+  cartCount.textContent = `${adetSayisi} ürün`;
+  cartTotal.textContent = money(toplam);
+}
+
+function renderCartSheet() {
+  cartItemsBody.innerHTML = '';
+  if (sepet.size === 0) {
+    cartItemsBody.innerHTML = '<p style="color:var(--muted);">Sepetiniz boş.</p>';
+  }
+  sepet.forEach(({ urun, adet }) => {
+    const row = document.createElement('div');
+    row.className = 'cart-item';
+    row.innerHTML = `
+      <div class="info">
+        <h4>${urun.ad}</h4>
+        <div class="line-price">${adet} x ${money(urun.fiyat)}</div>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn minus">−</button>
+        <span class="qty-num">${adet}</span>
+        <button class="qty-btn add">+</button>
+      </div>
+    `;
+    row.querySelector('.add').addEventListener('click', () => {
+      addToCart(urun);
+      renderCartSheet();
+      renderCartBar();
+      renderUrunler();
+    });
+    row.querySelector('.minus').addEventListener('click', () => {
+      removeFromCart(urun.id);
+      renderCartSheet();
+      renderCartBar();
+      renderUrunler();
+    });
+    cartItemsBody.appendChild(row);
+  });
+  const { toplam } = sepetToplam();
+  sheetToplam.textContent = money(toplam);
+}
+
+cartOpenBtn.addEventListener('click', () => {
+  renderCartSheet();
+  sheetOverlay.classList.add('open');
+  cartSheet.classList.add('open');
+});
+
+function closeSheet() {
+  sheetOverlay.classList.remove('open');
+  cartSheet.classList.remove('open');
+}
+sheetCloseBtn.addEventListener('click', closeSheet);
+sheetOverlay.addEventListener('click', closeSheet);
+
+siparisGonderBtn.addEventListener('click', async () => {
+  if (sepet.size === 0) return;
+  siparisGonderBtn.disabled = true;
+  siparisGonderBtn.textContent = 'Gönderiliyor…';
+
+  const kalemler = Array.from(sepet.values()).map(({ urun, adet }) => ({
+    urun_id: urun.id,
+    adet,
+    kalem_not: '',
+  }));
+
+  const { data, error } = await supabase.rpc('siparis_olustur', {
+    p_qr_token: qrToken,
+    p_kalemler: kalemler,
+    p_musteri_not: musteriNotInput.value.trim(),
+  });
+
+  if (error || !data) {
+    siparisGonderBtn.disabled = false;
+    siparisGonderBtn.textContent = 'Siparişi Gönder';
+    showToast('Sipariş gönderilemedi. Lütfen tekrar deneyin.', true);
+    return;
+  }
+
+  sessionStorage.setItem(storageKey(masa.id), data);
+  sepet.clear();
+  closeSheet();
+  cartBar.classList.remove('visible');
+  showDurumScreen(data);
+});
+
+function showToast(message, isError) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+const DURUM_ETIKET = {
+  beklemede: 'Onay Bekleniyor',
+  onaylandi: 'Onaylandı',
+  hazirlaniyor: 'Hazırlanıyor',
+  hazir: 'Hazır — Yolda',
+  teslim: 'Teslim Edildi',
+  iptal: 'İptal Edildi',
+};
+const DURUM_SIRA = ['beklemede', 'onaylandi', 'hazirlaniyor', 'hazir', 'teslim'];
+
+let pollTimer = null;
+
+async function showDurumScreen(siparisId) {
+  if (pollTimer) clearInterval(pollTimer);
+
+  renderState(`
+    <div class="durum-screen">
+      <div id="durumIcerik" class="card durum-card">
+        <div class="spinner" style="margin:0 auto;"></div>
+      </div>
+      <div style="text-align:center; margin-top:20px;">
+        <button class="btn btn-outline" id="yeniSiparisBtn">+ Yeni Sipariş Ver</button>
+      </div>
+    </div>
+  `);
+
+  document.getElementById('yeniSiparisBtn').addEventListener('click', () => {
+    sessionStorage.removeItem(storageKey(masa.id));
+    if (pollTimer) clearInterval(pollTimer);
+    loadMenu();
+  });
+
+  const fetchDurum = async () => {
+    const { data, error } = await supabase.rpc('siparis_durumu_getir', { p_siparis_id: siparisId });
+    const durumIcerik = document.getElementById('durumIcerik');
+    if (!durumIcerik) return;
+
+    if (error || !data || data.length === 0) {
+      durumIcerik.innerHTML = '<p>Sipariş bilgisi alınamadı.</p>';
+      return;
+    }
+
+    const s = data[0];
+    const stepIndex = DURUM_SIRA.indexOf(s.durum);
+
+    if (s.durum === 'iptal') {
+      durumIcerik.innerHTML = `
+        <span class="badge badge-status-iptal durum-badge">${DURUM_ETIKET.iptal}</span>
+        <p style="color:var(--muted);">Siparişiniz iptal edildi. Sorularınız için lütfen personelimizle iletişime geçin.</p>
+      `;
+      clearInterval(pollTimer);
+      return;
+    }
+
+    durumIcerik.innerHTML = `
+      <span class="badge badge-status-${s.durum} durum-badge">${DURUM_ETIKET[s.durum] || s.durum}</span>
+      <h2>Siparişiniz Alındı</h2>
+      <div class="durum-steps">
+        ${DURUM_SIRA.map((d, i) => `
+          <div class="durum-step ${i <= stepIndex ? 'done' : ''}">
+            <div class="dot"></div>
+            <span>${DURUM_ETIKET[d]}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="durum-kalemler">
+        ${(s.kalemler || []).map((k) => `
+          <div class="durum-kalem-row">
+            <span>${k.adet} x ${k.urun_ad}</span>
+            <span>${money(k.birim_fiyat * k.adet)}</span>
+          </div>
+        `).join('')}
+        <div class="durum-toplam">
+          <span>Toplam</span>
+          <span>${money(s.toplam_tutar)}</span>
+        </div>
+      </div>
+    `;
+  };
+
+  await fetchDurum();
+  pollTimer = setInterval(fetchDurum, 5000);
+}
+
+init();
+</script>
+</body>
+</html>
