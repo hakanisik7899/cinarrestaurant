@@ -110,16 +110,17 @@ PDF motoru (jsPDF) varsayılan olarak yalnızca temel Latin harflerini destekler
 - Menüdeki bazı ürünlerin fiyatı henüz 0 ₺ — panelden girilmesi gerekiyor.
 - Şu an yalnızca 5 örnek masa var; gerçek masa sayısına göre panelden eklenip QR'lar yazdırılmalı.
 - Online ödeme, yazıcı entegrasyonu ve çoklu dil şu an kapsam dışı (bkz. orijinal plan).
-- "Garson Çağır" butonu ve günlük ciro özeti gelecekte eklenebilecek küçük iyileştirmeler.
+- "Garson Çağır" butonu gelecekte eklenebilecek küçük bir iyileştirme.
 
 ---
 
 ## 7. Geliştirme Sırasında Çözülen Sorunlar
 
-Kayıt amacıyla: canlıya alma sürecinde çıkan ve düzeltilen iki teknik sorun —
+Kayıt amacıyla: canlıya alma sürecinde çıkan ve düzeltilen teknik sorunlar —
 
 1. **Supabase istemcisi yüklenmiyordu:** İlk sürümde `<script type="module">` ile `esm.sh` üzerinden ESM import kullanılıyordu; bazı ağlarda bu import sessizce başarısız olup formların tepkisiz kalmasına yol açıyordu. Çözüm: `@supabase/supabase-js` UMD build'i klasik `<script>` etiketiyle yükleniyor; kütüphane yüklenemezse artık kullanıcıya net bir hata mesajı gösteriliyor.
 2. **QR kodları görünmüyordu:** `panel.html`'de kullanılan `qrcode@1.5.3` paketinin CDN'deki `build/qrcode.min.js` dosyası kaldırılmış (404), bu da Masalar & QR sekmesinin JS hatasıyla boş kalmasına neden oluyordu. Çözüm: çalışan `qrcodejs` (davidshimjs) kütüphanesine geçildi.
+3. **CSV indirmede Türkçe karakterler bozuluyordu:** Rapor CSV'sine UTF-8 BOM, bir JS string literaline gömülü görünmez `﻿` karakteriyle ekleniyordu; kaynak dosya doğru kodlanmış olsa da (bayt düzeyinde doğrulandı) kullanıcı tarafında Excel'de karakterler bozuk görünüyordu (aynı anda PDF çıktısı sorunsuzdu). Önce `TextEncoder` + açık `0xEF,0xBB,0xBF` bayt dizisiyle daha sağlam bir yönteme geçildi; ardından **CSV özelliği tamamen kaldırıldı** — Türkçe karakter desteği yalnızca **PDF İndir** üzerinden sağlanıyor.
 
 ---
 
